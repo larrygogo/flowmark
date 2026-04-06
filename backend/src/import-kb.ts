@@ -36,7 +36,12 @@ const tx = db.transaction(() => {
     if (relPath === 'CLAUDE.md') continue; // skip project config
 
     const parts = relPath.split(path.sep);
-    const categoryName = parts.length > 1 ? parts[0] : 'uncategorized';
+    const categoryNameMap: Record<string, string> = {
+      design: '设计', tech: '技术', templates: '模板',
+      project: '项目文档', projects: '项目文档',
+    };
+    const rawName = parts.length > 1 ? parts[0] : 'uncategorized';
+    const categoryName = categoryNameMap[rawName] || rawName === 'uncategorized' ? (categoryNameMap[rawName] || '未分类') : rawName;
 
     if (!categoryMap.has(categoryName)) {
       const catId = uuid();
