@@ -1,4 +1,4 @@
-import type { Project, Column, Task } from '../types/index.ts'
+import type { Project, Column, Task, Category, Document } from '../types/index.ts'
 import api from './client.ts'
 
 export interface BoardWithColumns {
@@ -28,7 +28,17 @@ export async function listTasks(params: { board_id?: string; project_id?: string
   return data
 }
 
-export async function listNotes(params?: { is_converted?: boolean }) {
-  const { data } = await api.get('/notes', { params })
+export async function listCategories() {
+  const { data } = await api.get<Category[]>('/categories')
+  return data
+}
+
+export async function listDocuments(params?: { category?: string; status?: string; limit?: number }) {
+  const { data } = await api.get<Document[]>('/documents', { params })
+  return data
+}
+
+export async function getDocument(id: string) {
+  const { data } = await api.get<Document>(`/documents/${id}`)
   return data
 }

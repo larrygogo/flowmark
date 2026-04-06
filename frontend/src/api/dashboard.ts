@@ -14,7 +14,13 @@ export interface DashboardData {
     total_tasks: number
     done_tasks: number
   }[]
-  pending_notes: number
+  total_documents: number
+  recent_documents: {
+    id: string
+    title: string
+    category: string | null
+    updated_at: string
+  }[]
 }
 
 export async function getDashboard() {

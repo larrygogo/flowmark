@@ -190,33 +190,33 @@ apiRouter.put('/tasks/:id/move', (req, res) => {
   res.json(db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id));
 });
 
-// --- Quick Notes ---
-apiRouter.get('/notes', (req, res) => {
+// --- Categories ---
+apiRouter.get('/categories', (_req, res) => {
   const db = getDb();
-  const converted = req.query.is_converted === 'true' ? 1 : 0;
-  res.json(db.prepare('SELECT * FROM quick_notes WHERE is_converted = ? ORDER BY pinned DESC, created_at DESC').all(converted));
+  res.json(db.prepare(`
+    SELECT c.id, c.name, c.description, COUNT(d.id) as doc_count
+    FROM categories c LEFT JOIN documents d ON d.category_id = c.id
+    GROUP BY c.id ORDER BY c.position
+  `).all());
 });
 
-apiRouter.post('/notes', (req, res) => {
+// --- Documents ---
+apiRouter.get('/documents', (req, res) => {
   const db = getDb();
-  const id = uuid();
-  db.prepare('INSERT INTO quick_notes (id, content, project_id) VALUES (?,?,?)').run(id, req.body.content, req.body.project_id || null);
-  res.json(db.prepare('SELECT * FROM quick_notes WHERE id = ?').get(id));
+  const { category, status, limit } = req.query;
+  let sql = 'SELECT d.id, d.title, d.status, d.pinned, c.name as category, d.project_id, d.created_at, d.updated_at FROM documents d LEFT JOIN categories c ON d.category_id = c.id WHERE 1=1';
+  const params: any[] = [];
+  if (category) { sql += ' AND c.name = ? COLLATE NOCASE'; params.push(category); }
+  if (status) { sql += ' AND d.status = ?'; params.push(status); }
+  sql += ' ORDER BY d.pinned DESC, d.updated_at DESC LIMIT ?';
+  params.push(Number(limit) || 50);
+  res.json(db.prepare(sql).all(...params));
 });
 
-apiRouter.put('/notes/:id', (req, res) => {
-  const db = getDb();
-  const existing = db.prepare('SELECT * FROM quick_notes WHERE id = ?').get(req.params.id) as any;
-  if (!existing) return res.status(404).json({ error: 'Not found' });
-  const { content, pinned, project_id } = req.body;
-  db.prepare('UPDATE quick_notes SET content=?, pinned=?, project_id=?, updated_at=datetime(\'now\') WHERE id=?')
-    .run(content ?? existing.content, pinned ?? existing.pinned, project_id !== undefined ? project_id : existing.project_id, req.params.id);
-  res.json(db.prepare('SELECT * FROM quick_notes WHERE id = ?').get(req.params.id));
-});
-
-apiRouter.delete('/notes/:id', (req, res) => {
-  getDb().prepare('DELETE FROM quick_notes WHERE id = ?').run(req.params.id);
-  res.json({ ok: true });
+apiRouter.get('/documents/:id', (req, res) => {
+  const doc = getDb().prepare('SELECT d.*, c.name as category FROM documents d LEFT JOIN categories c ON d.category_id = c.id WHERE d.id = ?').get(req.params.id);
+  if (!doc) return res.status(404).json({ error: 'Not found' });
+  res.json(doc);
 });
 
 // --- Dashboard ---
@@ -232,8 +232,9 @@ apiRouter.get('/dashboard', (_req, res) => {
     const dc = (db.prepare("SELECT COUNT(*) as c FROM tasks t JOIN columns c ON t.column_id = c.id JOIN boards b ON c.board_id = b.id WHERE b.project_id = ? AND t.parent_task_id IS NULL AND (LOWER(c.name) LIKE '%done%' OR LOWER(c.name) LIKE '%完成%')").get(p.id) as any).c;
     return { id: p.id, name: p.name, color: p.color, total_tasks: tc, done_tasks: dc };
   });
-  const pendingNotes = (db.prepare('SELECT COUNT(*) as c FROM quick_notes WHERE is_converted = 0').get() as any).c;
-  res.json({ total_tasks: total, in_progress: inProgress, done, todo: total - inProgress - done, overdue_tasks: overdue, project_summaries: summaries, pending_notes: pendingNotes });
+  const totalDocs = (db.prepare('SELECT COUNT(*) as c FROM documents').get() as any).c;
+  const recentDocs = db.prepare('SELECT d.id, d.title, c.name as category, d.updated_at FROM documents d LEFT JOIN categories c ON d.category_id = c.id ORDER BY d.updated_at DESC LIMIT 5').all();
+  res.json({ total_tasks: total, in_progress: inProgress, done, todo: total - inProgress - done, overdue_tasks: overdue, project_summaries: summaries, total_documents: totalDocs, recent_documents: recentDocs });
 });
 
 // --- GitHub ---

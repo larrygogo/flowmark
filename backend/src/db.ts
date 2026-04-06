@@ -24,13 +24,6 @@ export function runMigrations() {
   const db = getDb();
 
   db.exec(`
-    CREATE TABLE IF NOT EXISTS auth (
-      id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-      password_hash TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -80,12 +73,21 @@ export function runMigrations() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
-    CREATE TABLE IF NOT EXISTS quick_notes (
+    CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT NOT NULL DEFAULT '',
+      position INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS documents (
+      id TEXT PRIMARY KEY,
+      category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
       project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
-      content TEXT NOT NULL,
-      is_converted INTEGER NOT NULL DEFAULT 0,
-      task_id TEXT REFERENCES tasks(id) ON DELETE SET NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','to_verify','archived')),
       pinned INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -111,7 +113,9 @@ export function runMigrations() {
     CREATE INDEX IF NOT EXISTS idx_columns_board ON columns(board_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_column ON tasks(column_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_task_id);
-    CREATE INDEX IF NOT EXISTS idx_notes_project ON quick_notes(project_id);
+    CREATE INDEX IF NOT EXISTS idx_documents_category ON documents(category_id);
+    CREATE INDEX IF NOT EXISTS idx_documents_project ON documents(project_id);
+    CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
     CREATE INDEX IF NOT EXISTS idx_github_cache_project ON github_cache(project_id);
   `);
 

@@ -4,7 +4,8 @@ import Layout from './components/Layout.tsx'
 import DashboardPage from './pages/DashboardPage.tsx'
 import ProjectListPage from './pages/ProjectListPage.tsx'
 import ProjectDetailPage from './pages/ProjectDetailPage.tsx'
-import NotesPage from './pages/NotesPage.tsx'
+import DocsPage from './pages/DocsPage.tsx'
+import DocDetailPage from './pages/DocDetailPage.tsx'
 
 export default function App() {
   return (
@@ -15,7 +16,8 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="projects" element={<ProjectListPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
-          <Route path="notes" element={<NotesPage />} />
+          <Route path="docs" element={<DocsPage />} />
+          <Route path="docs/:id" element={<DocDetailPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

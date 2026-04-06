@@ -42,20 +42,29 @@ export interface Task {
   description: string
   priority: Priority
   progress: number
-  labels: string[]
+  labels: string[] | string
   due_date: string | null
   position: number
   created_at: string
   updated_at: string
 }
 
-export interface QuickNote {
+export interface Category {
   id: string
+  name: string
+  description: string
+  doc_count: number
+}
+
+export interface Document {
+  id: string
+  category_id: string | null
   project_id: string | null
+  title: string
   content: string
-  is_converted: boolean
-  task_id: string | null
+  status: 'draft' | 'published' | 'to_verify' | 'archived'
   pinned: boolean
+  category: string | null
   created_at: string
   updated_at: string
 }
