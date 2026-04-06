@@ -1,4 +1,7 @@
 import 'dotenv/config';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -200,6 +203,98 @@ server.tool('search', '搜索任务和记录', {
   const notes = db.prepare('SELECT id, content, created_at FROM quick_notes WHERE content LIKE ? AND is_converted = 0 LIMIT 20').all(pattern);
   return { content: [{ type: 'text', text: JSON.stringify({ tasks, notes }, null, 2) }] };
 });
+
+// --- Knowledge Base (~/repos/ming-document) ---
+
+const KB_ROOT = process.env.KB_PATH || path.join(os.homedir(), 'repos', 'ming-document');
+
+server.tool('kb_search', '在个人知识库中搜索关键词', {
+  query: z.string().describe('搜索关键词'),
+}, async ({ query }) => {
+  const results: { file: string; matches: string[] }[] = [];
+  const files = await findMdFiles(KB_ROOT);
+  const lower = query.toLowerCase();
+
+  for (const file of files) {
+    try {
+      const content = fs.readFileSync(file, 'utf-8');
+      if (content.toLowerCase().includes(lower)) {
+        // Extract matching lines with context
+        const lines = content.split('\n');
+        const matches: string[] = [];
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].toLowerCase().includes(lower)) {
+            const start = Math.max(0, i - 1);
+            const end = Math.min(lines.length, i + 2);
+            matches.push(lines.slice(start, end).join('\n'));
+            if (matches.length >= 3) break;
+          }
+        }
+        results.push({ file: path.relative(KB_ROOT, file), matches });
+        if (results.length >= 10) break;
+      }
+    } catch {}
+  }
+
+  if (results.length === 0) return { content: [{ type: 'text', text: `No results for "${query}"` }] };
+  return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+});
+
+server.tool('kb_read', '读取知识库中的文件', {
+  file_path: z.string().describe('相对于知识库根目录的文件路径'),
+}, ({ file_path }) => {
+  const fullPath = path.resolve(KB_ROOT, file_path);
+  if (!fullPath.startsWith(KB_ROOT)) return { content: [{ type: 'text', text: 'Path outside knowledge base' }], isError: true };
+  try {
+    const content = fs.readFileSync(fullPath, 'utf-8');
+    return { content: [{ type: 'text', text: content }] };
+  } catch {
+    return { content: [{ type: 'text', text: `File not found: ${file_path}` }], isError: true };
+  }
+});
+
+server.tool('kb_list', '列出知识库目录结构', {
+  dir: z.string().optional().describe('子目录路径（默认根目录）'),
+}, async ({ dir }) => {
+  const target = dir ? path.resolve(KB_ROOT, dir) : KB_ROOT;
+  if (!target.startsWith(KB_ROOT)) return { content: [{ type: 'text', text: 'Path outside knowledge base' }], isError: true };
+  try {
+    const entries = fs.readdirSync(target, { withFileTypes: true });
+    const items = entries
+      .filter(e => !e.name.startsWith('.') && e.name !== 'node_modules')
+      .map(e => ({ name: e.name, type: e.isDirectory() ? 'dir' : 'file' }));
+    return { content: [{ type: 'text', text: JSON.stringify(items, null, 2) }] };
+  } catch {
+    return { content: [{ type: 'text', text: `Directory not found: ${dir}` }], isError: true };
+  }
+});
+
+server.tool('kb_write', '向知识库写入或更新文件', {
+  file_path: z.string().describe('相对于知识库根目录的文件路径'),
+  content: z.string().describe('文件内容（Markdown）'),
+}, ({ file_path, content }) => {
+  const fullPath = path.resolve(KB_ROOT, file_path);
+  if (!fullPath.startsWith(KB_ROOT)) return { content: [{ type: 'text', text: 'Path outside knowledge base' }], isError: true };
+  const dir = path.dirname(fullPath);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(fullPath, content, 'utf-8');
+  return { content: [{ type: 'text', text: JSON.stringify({ file_path, message: 'Written to knowledge base' }) }] };
+});
+
+async function findMdFiles(root: string): Promise<string[]> {
+  const results: string[] = [];
+  function walk(dir: string) {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.name.startsWith('.') || e.name === 'node_modules') continue;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (e.name.endsWith('.md')) results.push(full);
+    }
+  }
+  walk(root);
+  return results;
+}
 
 function parseGithubUrl(url: string): [string | null, string | null] {
   const p = url.replace(/^https?:\/\//, '').replace('github.com/', '').replace(/\/$/, '');
