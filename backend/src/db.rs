@@ -41,8 +41,17 @@ pub async fn init_pool(config: &Config) -> SqlitePool {
 pub async fn run_migrations(pool: &SqlitePool) {
     let migration_sql = include_str!("../migrations/20260406_000001_initial.sql");
     for statement in migration_sql.split(';') {
-        let stmt = statement.trim();
-        if stmt.is_empty() || stmt.starts_with("--") || stmt.starts_with("PRAGMA") {
+        // Strip comment lines before checking if empty
+        let cleaned: String = statement
+            .lines()
+            .filter(|line| {
+                let trimmed = line.trim();
+                !trimmed.starts_with("--") && !trimmed.is_empty()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let stmt = cleaned.trim();
+        if stmt.is_empty() || stmt.starts_with("PRAGMA") {
             continue;
         }
         sqlx::query(stmt)
