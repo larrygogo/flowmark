@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { FileText, FolderOpen } from 'lucide-react'
+import { FileText, FolderOpen, Search } from 'lucide-react'
 import { listCategories, listDocuments, listProjects } from '../api/projects.ts'
 import { cn } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import type { Document } from '../types/index.ts'
 
 export default function DocsPage() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [activeCategory, setActiveCategory] = useState('')
+  const [activeProjectId, setActiveProjectId] = useState('')
   const navigate = useNavigate()
 
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
@@ -19,49 +20,63 @@ export default function DocsPage() {
     queryFn: () => listDocuments({
       category: activeCategory || undefined,
       project_id: activeProjectId || undefined,
-      limit: 100,
+      limit: 200,
     }),
   })
 
-  const activeProjectName = activeProjectId ? projects.find(p => p.id === activeProjectId)?.name : null
+  // Client-side search filter
+  const filtered = search
+    ? docs.filter((d: Document & { project_name?: string }) =>
+        d.title.toLowerCase().includes(search.toLowerCase()))
+    : docs
 
   return (
     <div className="mx-auto max-w-lg p-4">
       <h1 className="text-xl font-bold">知识库</h1>
 
-      {/* Category filter */}
-      <div className="mt-3">
-        <div className="text-xs text-muted-foreground mb-1.5">分类</div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <Pill active={!activeCategory} onClick={() => setActiveCategory(null)}>全部</Pill>
+      {/* Filters row */}
+      <div className="mt-3 flex gap-2 items-center">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜索..."
+            className="w-full rounded-lg border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <select
+          value={activeCategory}
+          onChange={(e) => setActiveCategory(e.target.value)}
+          className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">全部分类</option>
           {categories.map((cat) => (
-            <Pill key={cat.id} active={activeCategory === cat.name} onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}>
-              {cat.name} ({cat.doc_count})
-            </Pill>
+            <option key={cat.id} value={cat.name}>{cat.name} ({cat.doc_count})</option>
           ))}
-        </div>
+        </select>
+        <select
+          value={activeProjectId}
+          onChange={(e) => setActiveProjectId(e.target.value)}
+          className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">全部项目</option>
+          {projects.filter(p => !p.archived).map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
       </div>
-
-      {/* Project filter */}
-      {projects.length > 0 && (
-        <div className="mt-2">
-          <div className="text-xs text-muted-foreground mb-1.5">项目</div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <Pill active={!activeProjectId} onClick={() => setActiveProjectId(null)}>全部</Pill>
-            {projects.filter(p => !p.archived).map((p) => (
-              <Pill key={p.id} active={activeProjectId === p.id} onClick={() => setActiveProjectId(activeProjectId === p.id ? null : p.id)}>
-                <span className="inline-block h-2 w-2 rounded-full mr-1" style={{ backgroundColor: p.color }} />
-                {p.name}
-              </Pill>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Document list */}
       <div className="mt-4 space-y-2">
         {isLoading && <div className="text-muted-foreground">加载中...</div>}
-        {docs.map((doc: Document & { project_name?: string }) => (
+
+        {!isLoading && filtered.length > 0 && (
+          <div className="text-xs text-muted-foreground mb-2">{filtered.length} 篇文档</div>
+        )}
+
+        {filtered.map((doc: Document & { project_name?: string }) => (
           <button
             key={doc.id}
             onClick={() => navigate(`/docs/${doc.id}`)}
@@ -89,32 +104,13 @@ export default function DocsPage() {
           </button>
         ))}
 
-        {!isLoading && docs.length === 0 && (
+        {!isLoading && filtered.length === 0 && (
           <div className="py-12 text-center text-muted-foreground">
             <FolderOpen size={48} className="mx-auto mb-3 opacity-20" />
-            <p>
-              {activeCategory && activeProjectName
-                ? `"${activeCategory}" + "${activeProjectName}" 下暂无文档`
-                : activeCategory ? `"${activeCategory}" 下暂无文档`
-                : activeProjectName ? `"${activeProjectName}" 下暂无文档`
-                : '知识库为空'}
-            </p>
-            <p className="text-sm mt-1">通过 AI 对话添加文档</p>
+            <p>{search ? `未找到 "${search}"` : '暂无文档'}</p>
           </div>
         )}
       </div>
     </div>
-  )
-}
-
-function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick}
-      className={cn(
-        'shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors flex items-center',
-        active ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground border border-border',
-      )}>
-      {children}
-    </button>
   )
 }
