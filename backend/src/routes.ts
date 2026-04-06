@@ -203,10 +203,11 @@ apiRouter.get('/categories', (_req, res) => {
 // --- Documents ---
 apiRouter.get('/documents', (req, res) => {
   const db = getDb();
-  const { category, status, limit } = req.query;
-  let sql = 'SELECT d.id, d.title, d.status, d.pinned, c.name as category, d.project_id, d.created_at, d.updated_at FROM documents d LEFT JOIN categories c ON d.category_id = c.id WHERE 1=1';
+  const { category, status, limit, project_id } = req.query;
+  let sql = 'SELECT d.id, d.title, d.status, d.pinned, c.name as category, d.project_id, p.name as project_name, d.created_at, d.updated_at FROM documents d LEFT JOIN categories c ON d.category_id = c.id LEFT JOIN projects p ON d.project_id = p.id WHERE 1=1';
   const params: any[] = [];
   if (category) { sql += ' AND c.name = ? COLLATE NOCASE'; params.push(category); }
+  if (project_id) { sql += ' AND d.project_id = ?'; params.push(project_id); }
   if (status) { sql += ' AND d.status = ?'; params.push(status); }
   sql += ' ORDER BY d.pinned DESC, d.updated_at DESC LIMIT ?';
   params.push(Number(limit) || 50);
