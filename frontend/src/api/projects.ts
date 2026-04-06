@@ -1,18 +1,16 @@
-import type { Project } from '../types/index.ts'
+import type { Project, Column, Task } from '../types/index.ts'
 import api from './client.ts'
-
-export interface ProjectDetail extends Project {
-  boards: BoardWithColumns[]
-}
 
 export interface BoardWithColumns {
   id: string
   project_id: string
   name: string
   position: number
-  created_at: string
-  updated_at: string
-  columns: import('../types/index.ts').Column[]
+  columns: Column[]
+}
+
+export interface ProjectDetail extends Project {
+  boards: BoardWithColumns[]
 }
 
 export async function listProjects() {
@@ -25,30 +23,12 @@ export async function getProject(id: string) {
   return data
 }
 
-export async function createProject(req: {
-  name: string
-  description?: string
-  github_url?: string
-  color?: string
-}) {
-  const { data } = await api.post<Project>('/projects', req)
+export async function listTasks(params: { board_id?: string; project_id?: string }) {
+  const { data } = await api.get<Task[]>('/tasks', { params })
   return data
 }
 
-export async function updateProject(
-  id: string,
-  req: {
-    name?: string
-    description?: string
-    github_url?: string
-    color?: string
-    archived?: boolean
-  },
-) {
-  const { data } = await api.put<Project>(`/projects/${id}`, req)
+export async function listNotes(params?: { is_converted?: boolean }) {
+  const { data } = await api.get('/notes', { params })
   return data
-}
-
-export async function deleteProject(id: string) {
-  await api.delete(`/projects/${id}`)
 }

@@ -1,182 +1,113 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { ArrowLeft, Settings, Trash2, GitBranch, LayoutList } from 'lucide-react'
-import { useProject, useUpdateProject, useDeleteProject } from '../hooks/useProjects.ts'
-import { useBoardTasks, useCreateTask, useUpdateTask, useDeleteTask, useMoveTask } from '../hooks/useTasks.ts'
-import KanbanBoard from '../components/KanbanBoard.tsx'
-import TaskDetailPanel from '../components/TaskDetailPanel.tsx'
-import GitHubPanel from '../components/GitHubPanel.tsx'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, Calendar, GitBranch } from 'lucide-react'
+import { getProject, listTasks } from '../api/projects.ts'
 import { cn } from '../lib/utils.ts'
-import type { Task } from '../types/index.ts'
+import type { Task, Column } from '../types/index.ts'
+
+const priorityColors: Record<string, string> = {
+  urgent: 'bg-red-500', high: 'bg-orange-500', medium: 'bg-blue-500', low: 'bg-gray-400', none: 'bg-transparent',
+}
 
 export default function ProjectDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { data: project, isLoading } = useProject(id)
-  const updateProjectMutation = useUpdateProject()
-  const deleteProjectMutation = useDeleteProject()
-  const [showSettings, setShowSettings] = useState(false)
-  const [activeBoardIdx, setActiveBoardIdx] = useState(0)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [viewTab, setViewTab] = useState<'board' | 'github'>('board')
+  const { data: project, isLoading } = useQuery({ queryKey: ['project', id], queryFn: () => getProject(id!), enabled: !!id })
+  const [boardIdx, setBoardIdx] = useState(0)
 
-  const boards = project?.boards ?? []
-  const activeBoard = boards[activeBoardIdx]
+  const board = project?.boards?.[boardIdx]
+  const { data: tasks = [] } = useQuery({ queryKey: ['tasks', board?.id], queryFn: () => listTasks({ board_id: board!.id }), enabled: !!board })
 
-  const { data: tasks = [] } = useBoardTasks(activeBoard?.id)
-  const createTaskMutation = useCreateTask(activeBoard?.id ?? '')
-  const updateTaskMutation = useUpdateTask(activeBoard?.id ?? '')
-  const deleteTaskMutation = useDeleteTask(activeBoard?.id ?? '')
-  const moveTaskMutation = useMoveTask(activeBoard?.id ?? '')
+  if (isLoading || !project) return <div className="p-4 text-muted-foreground">加载中...</div>
 
-  if (isLoading || !project) {
-    return <div className="p-4 text-muted-foreground">加载中...</div>
-  }
-
-  const handleDelete = async () => {
-    if (!confirm(`确定删除项目「${project.name}」？所有数据将被清除。`)) return
-    await deleteProjectMutation.mutateAsync(project.id)
-    navigate('/projects')
-  }
-
-  const handleArchive = async () => {
-    await updateProjectMutation.mutateAsync({ id: project.id, archived: !project.archived })
+  const boards = project.boards ?? []
+  const tasksByCol = new Map<string, Task[]>()
+  for (const col of board?.columns ?? []) tasksByCol.set(col.id, [])
+  for (const t of tasks) {
+    if (!t.parent_task_id) tasksByCol.get(t.column_id)?.push(t)
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
-      {/* Header */}
+    <div className="mx-auto max-w-4xl">
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <button onClick={() => navigate('/projects')} className="text-muted-foreground">
-          <ArrowLeft size={20} />
-        </button>
-        <div
-          className="h-3 w-3 rounded-full shrink-0"
-          style={{ backgroundColor: project.color }}
-        />
+        <button onClick={() => navigate('/projects')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
+        <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
         <h1 className="min-w-0 flex-1 truncate font-bold">{project.name}</h1>
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="text-muted-foreground"
-        >
-          <Settings size={18} />
-        </button>
+        {project.github_url && <GitBranch size={16} className="text-muted-foreground" />}
       </div>
 
-      {/* Settings panel */}
-      {showSettings && (
-        <div className="border-b border-border bg-card px-4 py-3 space-y-2">
-          {project.github_url && (
-            <div className="text-sm text-muted-foreground truncate">
-              GitHub: {project.github_url}
+      {project.description && (
+        <div className="px-4 py-2 text-sm text-muted-foreground">{project.description}</div>
+      )}
+
+      {boards.length > 1 && (
+        <div className="flex gap-1 overflow-x-auto border-b border-border px-4 py-2">
+          {boards.map((b, i) => (
+            <button key={b.id} onClick={() => setBoardIdx(i)}
+              className={cn('shrink-0 rounded-md px-3 py-1.5 text-sm', i === boardIdx ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
+              {b.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Column-based task view — horizontal scroll on mobile */}
+      {board && (
+        <div className="flex gap-3 overflow-x-auto p-4 snap-x snap-mandatory md:snap-none">
+          {board.columns.map((col: Column) => {
+            const colTasks = tasksByCol.get(col.id) ?? []
+            return (
+              <div key={col.id} className="w-72 shrink-0 snap-center rounded-lg border border-border bg-card md:w-64">
+                <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: col.color }} />
+                  <span className="flex-1 text-sm font-medium">{col.name}</span>
+                  <span className="text-xs text-muted-foreground">{colTasks.length}</span>
+                </div>
+                <div className="space-y-2 p-2 min-h-[80px]">
+                  {colTasks.map((task) => (
+                    <TaskItem key={task.id} task={task} />
+                  ))}
+                  {colTasks.length === 0 && (
+                    <div className="flex items-center justify-center h-16 text-xs text-muted-foreground opacity-40">空</div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TaskItem({ task }: { task: Task }) {
+  const labels: string[] = (() => { try { return typeof task.labels === 'string' ? JSON.parse(task.labels) : task.labels } catch { return [] } })()
+
+  return (
+    <div className="rounded-lg border border-border bg-background p-3">
+      <div className="flex items-start gap-2">
+        {task.priority !== 'none' && <div className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', priorityColors[task.priority])} />}
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium leading-snug">{task.title}</div>
+          {labels.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {labels.map((l) => <span key={l} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{l}</span>)}
             </div>
           )}
-          <div className="flex gap-2">
-            <button
-              onClick={handleArchive}
-              className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground"
-            >
-              {project.archived ? '取消归档' : '归档'}
-            </button>
-            <button
-              onClick={handleDelete}
-              className="rounded-md border border-destructive/30 px-3 py-1.5 text-sm text-destructive"
-            >
-              <Trash2 size={14} className="inline mr-1" />
-              删除项目
-            </button>
+          <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
+            {task.progress > 0 && (
+              <div className="flex items-center gap-1">
+                <div className="h-1.5 w-12 rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${task.progress}%` }} />
+                </div>
+                <span>{task.progress}%</span>
+              </div>
+            )}
+            {task.due_date && <div className="flex items-center gap-1"><Calendar size={11} />{task.due_date}</div>}
           </div>
         </div>
-      )}
-
-      {/* View tabs: Board / GitHub */}
-      <div className="flex items-center gap-1 border-b border-border px-4 py-2">
-        <button
-          onClick={() => setViewTab('board')}
-          className={cn(
-            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm',
-            viewTab === 'board' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground',
-          )}
-        >
-          <LayoutList size={14} />
-          看板
-        </button>
-        {project.github_url && (
-          <button
-            onClick={() => setViewTab('github')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm',
-              viewTab === 'github' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground',
-            )}
-          >
-            <GitBranch size={14} />
-            GitHub
-          </button>
-        )}
-
-        {/* Board sub-tabs */}
-        {viewTab === 'board' && boards.length > 1 && (
-          <>
-            <div className="mx-2 h-4 w-px bg-border" />
-            {boards.map((board, idx) => (
-              <button
-                key={board.id}
-                onClick={() => setActiveBoardIdx(idx)}
-                className={cn(
-                  'shrink-0 rounded-md px-2 py-1 text-xs transition-colors',
-                  idx === activeBoardIdx
-                    ? 'bg-muted text-foreground'
-                    : 'text-muted-foreground',
-                )}
-              >
-                {board.name}
-              </button>
-            ))}
-          </>
-        )}
       </div>
-
-      {/* Board view */}
-      {viewTab === 'board' && activeBoard && (
-        <KanbanBoard
-          columns={activeBoard.columns}
-          tasks={tasks}
-          onMoveTask={(taskId, columnId, position) => {
-            moveTaskMutation.mutate({ id: taskId, column_id: columnId, position })
-          }}
-          onCreateTask={(columnId, title) => {
-            createTaskMutation.mutate({ column_id: columnId, title })
-          }}
-          onTaskClick={(task) => setSelectedTask(task)}
-        />
-      )}
-
-      {viewTab === 'board' && boards.length === 0 && (
-        <div className="py-12 text-center text-muted-foreground">
-          <p>此项目没有看板</p>
-        </div>
-      )}
-
-      {/* GitHub view */}
-      {viewTab === 'github' && (
-        <GitHubPanel projectId={project.id} hasGitHub={!!project.github_url} />
-      )}
-
-      {/* Task detail panel */}
-      {selectedTask && (
-        <TaskDetailPanel
-          task={selectedTask}
-          onUpdate={(updates) => {
-            updateTaskMutation.mutate({ id: selectedTask.id, ...updates } as Parameters<typeof updateTaskMutation.mutate>[0])
-            setSelectedTask({ ...selectedTask, ...updates } as Task)
-          }}
-          onDelete={() => {
-            deleteTaskMutation.mutate(selectedTask.id)
-            setSelectedTask(null)
-          }}
-          onClose={() => setSelectedTask(null)}
-        />
-      )}
     </div>
   )
 }

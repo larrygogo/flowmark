@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router'
-import { LayoutDashboard, FolderKanban, StickyNote, LogOut } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, StickyNote } from 'lucide-react'
 import { cn } from '../lib/utils.ts'
 
 const navItems = [
@@ -8,10 +8,10 @@ const navItems = [
   { to: '/notes', icon: StickyNote, label: '记录' },
 ]
 
-export default function Layout({ onLogout }: { onLogout: () => void }) {
+export default function Layout() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      {/* Top header — desktop only */}
+      {/* Top header — desktop */}
       <header className="hidden border-b border-border px-6 py-3 md:flex md:items-center md:justify-between">
         <h1 className="text-lg font-bold text-primary">FlowMark</h1>
         <nav className="flex items-center gap-6">
@@ -31,9 +31,6 @@ export default function Layout({ onLogout }: { onLogout: () => void }) {
               {item.label}
             </NavLink>
           ))}
-          <button onClick={onLogout} className="text-muted-foreground hover:text-foreground">
-            <LogOut size={18} />
-          </button>
         </nav>
       </header>
 
@@ -42,7 +39,7 @@ export default function Layout({ onLogout }: { onLogout: () => void }) {
         <Outlet />
       </main>
 
-      {/* Bottom navigation — mobile only */}
+      {/* Bottom nav — mobile */}
       <nav className="safe-area-bottom fixed bottom-0 left-0 right-0 z-50 flex border-t border-border bg-background md:hidden">
         {navItems.map((item) => (
           <NavLink

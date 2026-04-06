@@ -1,3 +1,4 @@
+import type { Task } from '../types/index.ts'
 import api from './client.ts'
 
 export interface DashboardData {
@@ -5,7 +6,7 @@ export interface DashboardData {
   in_progress: number
   done: number
   todo: number
-  overdue_tasks: import('../types/index.ts').Task[]
+  overdue_tasks: Task[]
   project_summaries: {
     id: string
     name: string
