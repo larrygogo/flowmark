@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { FolderKanban, GitBranch, Archive, Plus, Pencil, Trash2, X, Search } from 'lucide-react'
+import { FolderKanban, GitBranch, Archive, Plus, Pencil, Trash2, X, Search, ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import { listProjects, createProject, updateProject, deleteProject } from '../api/projects.ts'
 import { parseTags } from '../lib/utils.ts'
 import type { Project } from '../types/index.ts'
@@ -25,6 +25,8 @@ export default function ProjectListPage() {
 
   if (isLoading) return <div className="p-4 text-muted-foreground">加载中...</div>
 
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+
   const active = projects.filter((p) => !p.archived)
   const archived = projects.filter((p) => p.archived)
   const groups = [...new Set(active.map(p => p.group_name || '未分类'))]
@@ -35,6 +37,26 @@ export default function ProjectListPage() {
     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.description.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
+
+  // 按 group_name 分组
+  const groupedProjects = filtered.reduce<Record<string, Project[]>>((acc, p) => {
+    const g = p.group_name || '未分类'
+    ;(acc[g] ??= []).push(p)
+    return acc
+  }, {})
+  const sortedGroupNames = Object.keys(groupedProjects).sort((a, b) => {
+    if (a === '未分类') return 1
+    if (b === '未分类') return -1
+    return a.localeCompare(b, 'zh')
+  })
+
+  const toggleGroup = (g: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev)
+      next.has(g) ? next.delete(g) : next.add(g)
+      return next
+    })
+  }
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
@@ -71,6 +93,7 @@ export default function ProjectListPage() {
       {(showForm || editingProject) && (
         <ProjectForm
           project={editingProject}
+          existingGroups={groups}
           onSubmit={(data) => {
             if (editingProject) {
               updateMutation.mutate({ id: editingProject.id, ...data })
@@ -83,35 +106,58 @@ export default function ProjectListPage() {
         />
       )}
 
-      {/* Project grid */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filtered.map((p) => (
-          <div key={p.id} className="group rounded-lg border border-border bg-card p-4 active:bg-accent hover:bg-accent/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <button onClick={() => navigate(`/projects/${p.id}`)} className="flex items-center gap-3 min-w-0 flex-1 text-left">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: p.color + '20', color: p.color }}>
-                  <FolderKanban size={20} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{p.name}</div>
-                  {p.description && <div className="truncate text-sm text-muted-foreground">{p.description}</div>}
-                  {parseTags(p.tags).length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {parseTags(p.tags).map(t => <span key={t} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{t}</span>)}
+      {/* Grouped project list */}
+      <div className="mt-4 space-y-4">
+        {sortedGroupNames.map(groupName => {
+          const groupProjects = groupedProjects[groupName]
+          const isCollapsed = collapsedGroups.has(groupName)
+          const isSingleGroup = sortedGroupNames.length === 1
+
+          return (
+            <div key={groupName}>
+              {!isSingleGroup && (
+                <button onClick={() => toggleGroup(groupName)}
+                  className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                  <Layers size={14} />
+                  <span>{groupName}</span>
+                  <span className="text-xs font-normal">({groupProjects.length})</span>
+                </button>
+              )}
+              {!isCollapsed && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {groupProjects.map((p) => (
+                    <div key={p.id} className="group rounded-lg border border-border bg-card p-4 active:bg-accent hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => navigate(`/projects/${p.id}`)} className="flex items-center gap-3 min-w-0 flex-1 text-left">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                            style={{ backgroundColor: p.color + '20', color: p.color }}>
+                            <FolderKanban size={20} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate font-medium">{p.name}</div>
+                            {p.description && <div className="truncate text-sm text-muted-foreground">{p.description}</div>}
+                            {parseTags(p.tags).length > 0 && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {parseTags(p.tags).map(t => <span key={t} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{t}</span>)}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                        <div className="flex shrink-0 gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                          {p.github_url && <GitBranch size={14} className="text-muted-foreground" />}
+                          <button onClick={() => setEditingProject(p)} className="p-1 text-muted-foreground hover:text-foreground"><Pencil size={14} /></button>
+                          <button onClick={() => { if (confirm(`删除项目「${p.name}」？`)) deleteMutation.mutate(p.id) }}
+                            className="p-1 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </button>
-              <div className="flex shrink-0 gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                {p.github_url && <GitBranch size={14} className="text-muted-foreground" />}
-                <button onClick={() => setEditingProject(p)} className="p-1 text-muted-foreground hover:text-foreground"><Pencil size={14} /></button>
-                <button onClick={() => { if (confirm(`删除项目「${p.name}」？`)) deleteMutation.mutate(p.id) }}
-                  className="p-1 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-              </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {filtered.length === 0 && !showForm && (
@@ -143,11 +189,12 @@ export default function ProjectListPage() {
   )
 }
 
-function ProjectForm({ project, onSubmit, onCancel, loading }: {
+function ProjectForm({ project, onSubmit, onCancel, loading, existingGroups }: {
   project: Project | null
   onSubmit: (data: { name: string; description?: string; github_url?: string; color?: string; group_name?: string; tags?: string[] }) => void
   onCancel: () => void
   loading: boolean
+  existingGroups: string[]
 }) {
   const [name, setName] = useState(project?.name || '')
   const [description, setDescription] = useState(project?.description || '')
@@ -178,11 +225,13 @@ function ProjectForm({ project, onSubmit, onCancel, loading }: {
       <input type="text" placeholder="标签（逗号分隔）" value={tagsText} onChange={(e) => setTagsText(e.target.value)}
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
       <div className="flex gap-3">
-        <select value={groupName} onChange={(e) => setGroupName(e.target.value)}
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-          <option value="个人项目">个人项目</option>
-          <option value="公司项目">公司项目</option>
-        </select>
+        <div className="flex-1 relative">
+          <input type="text" list="group-options" placeholder="分组名称" value={groupName} onChange={(e) => setGroupName(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <datalist id="group-options">
+            {existingGroups.map(g => <option key={g} value={g} />)}
+          </datalist>
+        </div>
         <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
           className="h-9 w-9 rounded-md border border-input bg-background p-0.5" />
       </div>
