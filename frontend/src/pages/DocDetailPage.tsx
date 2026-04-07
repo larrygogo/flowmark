@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, FileText } from 'lucide-react'
+import { ArrowLeft, FileText, Download } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -21,12 +21,25 @@ export default function DocDetailPage() {
 
   const d = doc as typeof doc & { project_name?: string; project_color?: string }
 
+  const handleDownload = () => {
+    const blob = new Blob([doc.content], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${doc.title}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
         <button onClick={() => navigate(fromProject && projectId ? `/projects/${projectId}` : '/docs')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
         <FileText size={18} className="text-muted-foreground" />
         <h1 className="min-w-0 flex-1 truncate font-bold">{doc.title}</h1>
+        <button onClick={handleDownload} className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="下载 Markdown">
+          <Download size={18} />
+        </button>
       </div>
 
       <div className="px-4 py-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground border-b border-border">
