@@ -22,10 +22,9 @@ export default function ProjectListPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['projects'] }); setEditingProject(null) },
   })
   const deleteMutation = useMutation({ mutationFn: deleteProject, onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }) })
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
   if (isLoading) return <div className="p-4 text-muted-foreground">加载中...</div>
-
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
   const active = projects.filter((p) => !p.archived)
   const archived = projects.filter((p) => p.archived)
