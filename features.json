@@ -333,6 +333,15 @@
       "priority": "medium",
       "module": "frontend",
       "tags": ["enhancement", "ui", "design"]
+    },
+    {
+      "id": "F038",
+      "title": "Sheet 底部按钮被底栏遮挡",
+      "description": "Sheet 弹出层底部的操作按钮被页面底部导航栏遮挡，需增加安全区域间距或调整 Sheet 布局避免遮挡",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["bugfix", "ui", "mobile"]
     }
   ]
 }

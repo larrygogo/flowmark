@@ -18,7 +18,7 @@ export default function Drawer({ open, onClose, title, children }: {
   if (!open) return null
 
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-50 flex items-end md:items-center md:justify-end"
+    <div ref={overlayRef} className="fixed inset-0 z-[60] flex items-end md:items-center md:justify-end"
       onClick={(e) => { if (e.target === overlayRef.current) onClose() }}>
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
       <div className="relative w-full md:w-[420px] md:h-full max-h-[85dvh] md:max-h-none rounded-t-2xl md:rounded-none bg-card border-t border-border md:border-l md:border-t-0 overflow-y-auto animate-slide-up md:animate-slide-left">
@@ -28,7 +28,7 @@ export default function Drawer({ open, onClose, title, children }: {
             <X size={20} />
           </button>
         </div>
-        <div className="p-5">
+        <div className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom)+4rem)] md:pb-5">
           {children}
         </div>
       </div>
