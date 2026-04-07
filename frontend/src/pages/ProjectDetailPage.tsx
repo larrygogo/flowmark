@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Calendar, GitBranch } from 'lucide-react'
+import { ArrowLeft, Calendar, GitBranch, AlertTriangle, Search } from 'lucide-react'
 import { getProject, listTasks } from '../api/projects.ts'
 import { cn } from '../lib/utils.ts'
 import type { Task, Column } from '../types/index.ts'
@@ -15,6 +15,8 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate()
   const { data: project, isLoading } = useQuery({ queryKey: ['project', id], queryFn: () => getProject(id!), enabled: !!id })
   const [boardIdx, setBoardIdx] = useState(0)
+  const [taskSearch, setTaskSearch] = useState('')
+  const [taskPriority, setTaskPriority] = useState('')
 
   const board = project?.boards?.[boardIdx]
   const { data: tasks = [] } = useQuery({ queryKey: ['tasks', board?.id], queryFn: () => listTasks({ board_id: board!.id }), enabled: !!board })
@@ -22,10 +24,19 @@ export default function ProjectDetailPage() {
   if (isLoading || !project) return <div className="p-4 text-muted-foreground">加载中...</div>
 
   const boards = project.boards ?? []
+
+  // Filter tasks
+  const filteredTasks = tasks.filter(t => {
+    if (t.parent_task_id) return false
+    if (taskSearch && !t.title.toLowerCase().includes(taskSearch.toLowerCase())) return false
+    if (taskPriority && t.priority !== taskPriority) return false
+    return true
+  })
+
   const tasksByCol = new Map<string, Task[]>()
   for (const col of board?.columns ?? []) tasksByCol.set(col.id, [])
-  for (const t of tasks) {
-    if (!t.parent_task_id) tasksByCol.get(t.column_id)?.push(t)
+  for (const t of filteredTasks) {
+    tasksByCol.get(t.column_id)?.push(t)
   }
 
   return (
@@ -49,6 +60,25 @@ export default function ProjectDetailPage() {
               {b.name}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Task filter bar */}
+      {board && tasks.length > 0 && (
+        <div className="flex gap-2 items-center px-4 pt-3">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input type="text" value={taskSearch} onChange={(e) => setTaskSearch(e.target.value)}
+              placeholder="搜索任务..." className="w-full rounded-lg border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+          <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value)}
+            className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+            <option value="">优先级</option>
+            <option value="urgent">紧急</option>
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
         </div>
       )}
 
@@ -81,11 +111,16 @@ export default function ProjectDetailPage() {
   )
 }
 
+function isOverdue(dueDate: string | null): boolean {
+  if (!dueDate) return false
+  return new Date(dueDate) < new Date(new Date().toISOString().split('T')[0])
+}
+
 function TaskItem({ task }: { task: Task }) {
   const labels: string[] = (() => { try { return typeof task.labels === 'string' ? JSON.parse(task.labels) : task.labels } catch { return [] } })()
 
   return (
-    <div className="rounded-lg border border-border bg-background p-3">
+    <div className={cn('rounded-lg border bg-background p-3', isOverdue(task.due_date) ? 'border-destructive/40' : 'border-border')}>
       <div className="flex items-start gap-2">
         {task.priority !== 'none' && <div className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', priorityColors[task.priority])} />}
         <div className="min-w-0 flex-1">
@@ -104,7 +139,12 @@ function TaskItem({ task }: { task: Task }) {
                 <span>{task.progress}%</span>
               </div>
             )}
-            {task.due_date && <div className="flex items-center gap-1"><Calendar size={11} />{task.due_date}</div>}
+            {task.due_date && (
+              <div className={cn('flex items-center gap-1', isOverdue(task.due_date) && 'text-destructive')}>
+                {isOverdue(task.due_date) ? <AlertTriangle size={11} /> : <Calendar size={11} />}
+                {task.due_date}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -276,6 +276,22 @@ apiRouter.post('/projects/:id/github/sync', async (req, res) => {
   }
 });
 
+// --- Export ---
+apiRouter.get('/export', (_req, res) => {
+  const db = getDb();
+  const data = {
+    exported_at: new Date().toISOString(),
+    projects: db.prepare('SELECT * FROM projects ORDER BY position').all(),
+    boards: db.prepare('SELECT * FROM boards ORDER BY project_id, position').all(),
+    columns: db.prepare('SELECT * FROM columns ORDER BY board_id, position').all(),
+    tasks: db.prepare('SELECT * FROM tasks ORDER BY column_id, position').all(),
+    categories: db.prepare('SELECT * FROM categories ORDER BY position').all(),
+    documents: db.prepare('SELECT * FROM documents ORDER BY updated_at DESC').all(),
+  };
+  res.setHeader('Content-Disposition', 'attachment; filename="flowmark-export.json"');
+  res.json(data);
+});
+
 function parseGithubUrl(url?: string | null): [string | null, string | null] {
   if (!url) return [null, null];
   const p = url.replace(/^https?:\/\//, '').replace('github.com/', '').replace(/\/$/, '');

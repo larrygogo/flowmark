@@ -1,0 +1,113 @@
+{
+  "version": "1.0",
+  "features": [
+    {
+      "id": "F001",
+      "title": "看板系统",
+      "description": "项目、看板、列、任务的完整 CRUD，支持拖拽排序",
+      "status": "done",
+      "priority": "high",
+      "module": "both",
+      "tags": ["core", "kanban"]
+    },
+    {
+      "id": "F002",
+      "title": "任务拆分与子任务",
+      "description": "任务支持嵌套子任务，进度百分比跟踪",
+      "status": "done",
+      "priority": "high",
+      "module": "both",
+      "tags": ["core", "task"]
+    },
+    {
+      "id": "F003",
+      "title": "知识库文档管理",
+      "description": "Markdown 文档管理，支持分类、标签、状态流转、搜索",
+      "status": "done",
+      "priority": "high",
+      "module": "both",
+      "tags": ["core", "knowledge-base"]
+    },
+    {
+      "id": "F004",
+      "title": "GitHub 集成",
+      "description": "同步 GitHub Issues/PRs，缓存数据，需配置 GITHUB_TOKEN",
+      "status": "done",
+      "priority": "medium",
+      "module": "both",
+      "tags": ["integration", "github"]
+    },
+    {
+      "id": "F005",
+      "title": "JWT 认证",
+      "description": "单用户系统，首次设置密码，JWT Bearer token 鉴权",
+      "status": "done",
+      "priority": "high",
+      "module": "backend",
+      "tags": ["core", "auth"]
+    },
+    {
+      "id": "F006",
+      "title": "MCP Server",
+      "description": "Model Context Protocol 集成，Claude 可直接操作任务和文档",
+      "status": "done",
+      "priority": "medium",
+      "module": "backend",
+      "tags": ["integration", "ai"]
+    },
+    {
+      "id": "F007",
+      "title": "Dashboard 概览",
+      "description": "首页仪表盘，展示项目概况和任务统计",
+      "status": "done",
+      "priority": "medium",
+      "module": "both",
+      "tags": ["core", "dashboard"]
+    },
+    {
+      "id": "F008",
+      "title": "任务优先级与标签",
+      "description": "支持 urgent/high/medium/low/none 优先级和自定义标签",
+      "status": "done",
+      "priority": "medium",
+      "module": "both",
+      "tags": ["core", "task"]
+    },
+    {
+      "id": "F009",
+      "title": "任务到期日",
+      "description": "任务设置到期日期，支持过期提醒",
+      "status": "done",
+      "priority": "medium",
+      "module": "both",
+      "tags": ["enhancement", "task"]
+    },
+    {
+      "id": "F010",
+      "title": "任务搜索与筛选",
+      "description": "按关键词、优先级、标签、状态筛选任务",
+      "status": "done",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "task"]
+    },
+    {
+      "id": "F011",
+      "title": "数据导出",
+      "description": "支持导出项目数据为 JSON/CSV 格式",
+      "status": "done",
+      "priority": "low",
+      "module": "both",
+      "tags": ["enhancement", "data"]
+    },
+    {
+      "id": "F012",
+      "title": "移动端适配",
+      "description": "响应式布局优化，支持移动端浏览器使用",
+      "status": "done",
+      "priority": "low",
+      "module": "frontend",
+      "tags": ["enhancement", "ui"]
+    }
+  ]
+}
