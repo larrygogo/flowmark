@@ -12,6 +12,7 @@ export interface Project {
   position: number
   created_at: string
   updated_at: string
+  last_activity_at?: string
 }
 
 export interface Board {

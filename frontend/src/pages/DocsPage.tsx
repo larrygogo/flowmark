@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { FileText, FolderOpen, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { listCategories, listDocuments, listProjects } from '../api/projects.ts'
-import { cn, parseTags } from '../lib/utils.ts'
+import { parseTags } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import type { Document } from '../types/index.ts'
 
@@ -55,45 +55,44 @@ export default function DocsPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
-      <h1 className="text-xl font-bold">知识库</h1>
+      <h1 className="text-xl font-semibold tracking-tight">知识库</h1>
 
-      {/* Filters */}
-      <div className="mt-3 flex gap-2 items-center">
-        <div className={cn('relative transition-all', searchFocused ? 'flex-1' : 'flex-1')}>
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input ref={searchRef} type="text" value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => { if (!search) setSearchFocused(false) }}
-            placeholder="搜索标题和内容..."
-            className="w-full rounded-lg border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
-        {searchFocused && !search ? null : searchFocused ? (
-          <button onClick={() => { setSearch(''); setSearchFocused(false); searchRef.current?.blur() }}
-            className="shrink-0 text-sm text-primary md:hidden">取消</button>
-        ) : null}
-        {(!searchFocused || window.innerWidth >= 768) && (
-          <>
-            <select value={activeCategory} onChange={(e) => setActiveCategory(e.target.value)}
-              className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-              <option value="">分类</option>
-              {categories.map((cat) => <option key={cat.id} value={cat.name}>{cat.name} ({cat.doc_count})</option>)}
-            </select>
-            <select value={activeProjectId} onChange={(e) => setActiveProjectId(e.target.value)}
-              className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-              <option value="">项目</option>
-              {projects.filter(p => !p.archived).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            {allTags.length > 0 && (
-              <select value={activeTag} onChange={(e) => setActiveTag(e.target.value)}
-                className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="">标签</option>
-                {allTags.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            )}
-          </>
-        )}
+      {/* Search */}
+      <div className="mt-3 relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input ref={searchRef} type="text" value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => { if (!search) setSearchFocused(false) }}
+          placeholder="搜索标题和内容..."
+          className="w-full rounded-xl border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
       </div>
+
+      {/* Filter pills */}
+      {(categories.length > 0 || projects.filter(p => !p.archived).length > 0 || allTags.length > 0) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {categories.map((cat) => (
+            <button key={cat.id} onClick={() => setActiveCategory(activeCategory === cat.name ? '' : cat.name)}
+              className={`rounded-full px-3 py-1 text-xs transition-colors ${activeCategory === cat.name ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+              {cat.name}
+            </button>
+          ))}
+          {categories.length > 0 && projects.filter(p => !p.archived).length > 0 && <div className="w-px h-5 bg-border self-center mx-0.5" />}
+          {projects.filter(p => !p.archived).map((p) => (
+            <button key={p.id} onClick={() => setActiveProjectId(activeProjectId === p.id ? '' : p.id)}
+              className={`rounded-full px-3 py-1 text-xs transition-colors ${activeProjectId === p.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+              {p.name}
+            </button>
+          ))}
+          {allTags.length > 0 && <div className="w-px h-5 bg-border self-center mx-0.5" />}
+          {allTags.map(t => (
+            <button key={t} onClick={() => setActiveTag(activeTag === t ? '' : t)}
+              className={`rounded-full px-3 py-1 text-xs transition-colors ${activeTag === t ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Document grid */}
       <div className="mt-4">
@@ -106,7 +105,7 @@ export default function DocsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {docs.map((doc: Document & { project_name?: string; match_snippet?: string }) => (
             <button key={doc.id} onClick={() => navigate(`/docs/${doc.id}`)}
-              className="rounded-lg border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
+              className="rounded-xl border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
               <div className="flex items-start gap-2">
                 <FileText size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
@@ -138,12 +137,12 @@ export default function DocsPage() {
         {totalPages > 1 && (
           <div className="mt-4 flex items-center justify-center gap-2">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="rounded-lg border border-border p-2 text-sm disabled:opacity-30 hover:bg-accent transition-colors">
+              className="rounded-xl border border-border p-2 text-sm disabled:opacity-30 hover:bg-accent transition-colors">
               <ChevronLeft size={16} />
             </button>
             <span className="text-sm text-muted-foreground px-2">{page} / {totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              className="rounded-lg border border-border p-2 text-sm disabled:opacity-30 hover:bg-accent transition-colors">
+              className="rounded-xl border border-border p-2 text-sm disabled:opacity-30 hover:bg-accent transition-colors">
               <ChevronRight size={16} />
             </button>
           </div>

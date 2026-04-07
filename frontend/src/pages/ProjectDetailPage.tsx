@@ -113,10 +113,10 @@ export default function ProjectDetailPage() {
               <div className="relative flex-1">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input type="text" value={taskSearch} onChange={(e) => setTaskSearch(e.target.value)}
-                  placeholder="搜索任务..." className="w-full rounded-lg border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  placeholder="搜索任务..." className="w-full rounded-xl border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
               <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value)}
-                className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                className="shrink-0 rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="">优先级</option>
                 <option value="urgent">紧急</option>
                 <option value="high">高</option>
@@ -131,7 +131,7 @@ export default function ProjectDetailPage() {
               {board.columns.map((col: Column) => {
                 const colTasks = tasksByCol.get(col.id) ?? []
                 return (
-                  <div key={col.id} className="w-72 shrink-0 snap-center rounded-lg border border-border bg-card md:w-64">
+                  <div key={col.id} className="w-72 shrink-0 snap-center rounded-xl border border-border bg-card md:w-64">
                     <div className="flex items-center gap-2 border-b border-border px-3 py-2">
                       <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: col.color }} />
                       <span className="flex-1 text-sm font-medium">{col.name}</span>
@@ -172,7 +172,7 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {docs.map((doc: Document & { project_name?: string }) => (
                 <button key={doc.id} onClick={() => navigate(`/docs/${doc.id}?from=project&pid=${id}`)}
-                  className="rounded-lg border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
+                  className="rounded-xl border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
                   <div className="flex items-start gap-2">
                     <FileText size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
                     <div className="min-w-0 flex-1">
@@ -245,19 +245,19 @@ function ProjectOverview({ project, tasks, docs, boards, navigate, id }: {
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-lg border border-border bg-card p-3">
+        <div className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Circle size={12} /> 待办</div>
           <div className="mt-1 text-2xl font-bold">{todoTasks}</div>
         </div>
-        <div className="rounded-lg border border-border bg-card p-3">
+        <div className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock size={12} /> 进行中</div>
           <div className="mt-1 text-2xl font-bold">{inProgressTasks}</div>
         </div>
-        <div className="rounded-lg border border-border bg-card p-3">
+        <div className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 size={12} /> 已完成</div>
           <div className="mt-1 text-2xl font-bold">{doneTasks}</div>
         </div>
-        <div className="rounded-lg border border-border bg-card p-3">
+        <div className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><FileText size={12} /> 文档</div>
           <div className="mt-1 text-2xl font-bold">{docs.length}</div>
         </div>
@@ -265,7 +265,7 @@ function ProjectOverview({ project, tasks, docs, boards, navigate, id }: {
 
       {/* Progress bar */}
       {totalTasks > 0 && (
-        <div className="rounded-lg border border-border bg-card p-3">
+        <div className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="font-medium">整体进度</span>
             <span className="text-muted-foreground">{completionPct}%</span>
@@ -278,7 +278,7 @@ function ProjectOverview({ project, tasks, docs, boards, navigate, id }: {
 
       {/* Overdue tasks */}
       {overdueTasks.length > 0 && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
           <div className="flex items-center gap-2 text-sm font-medium text-destructive mb-2">
             <AlertTriangle size={14} /> 逾期任务 ({overdueTasks.length})
           </div>
@@ -296,7 +296,7 @@ function ProjectOverview({ project, tasks, docs, boards, navigate, id }: {
 
       {/* Urgent/high priority tasks */}
       {urgentTasks.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-3">
+        <div className="rounded-xl border border-border bg-card p-3">
           <div className="text-sm font-medium mb-2">高优先级任务</div>
           <div className="space-y-1.5">
             {urgentTasks.slice(0, 5).map(t => (
@@ -313,7 +313,7 @@ function ProjectOverview({ project, tasks, docs, boards, navigate, id }: {
 
       {/* Recent docs */}
       {recentDocs.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-3">
+        <div className="rounded-xl border border-border bg-card p-3">
           <div className="text-sm font-medium mb-2">最近文档</div>
           <div className="space-y-1.5">
             {recentDocs.map(doc => (
@@ -348,7 +348,7 @@ function TaskItem({ task }: { task: Task }) {
   const labels: string[] = (() => { try { return typeof task.labels === 'string' ? JSON.parse(task.labels) : task.labels } catch { return [] } })()
 
   return (
-    <div className={cn('rounded-lg border bg-background p-3', isOverdue(task.due_date) ? 'border-destructive/40' : 'border-border')}>
+    <div className={cn('rounded-xl border bg-background p-3', isOverdue(task.due_date) ? 'border-destructive/40' : 'border-border')}>
       <div className="flex items-start gap-2">
         {task.priority !== 'none' && <div className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', priorityColors[task.priority])} />}
         <div className="min-w-0 flex-1">

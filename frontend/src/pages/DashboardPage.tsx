@@ -15,7 +15,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
       <div>
-        <h1 className="text-2xl font-bold">FlowMark</h1>
+        <h1 className="text-xl font-semibold tracking-tight">FlowMark</h1>
         <p className="text-sm text-muted-foreground">{dayjs().format('YYYY-MM-DD dddd')}</p>
       </div>
 
@@ -39,7 +39,7 @@ export default function DashboardPage() {
               </h2>
               <div className="space-y-2">
                 {data.overdue_tasks.map((task) => (
-                  <div key={task.id} className="rounded-lg border border-destructive/20 bg-card p-3">
+                  <div key={task.id} className="rounded-xl border border-destructive/20 bg-card p-3">
                     <div className="text-sm font-medium">{task.title}</div>
                     <div className="mt-1 text-xs text-destructive">截止 {task.due_date}</div>
                   </div>
@@ -57,7 +57,7 @@ export default function DashboardPage() {
                   const pct = p.total_tasks > 0 ? Math.round((p.done_tasks / p.total_tasks) * 100) : 0
                   return (
                     <button key={p.id} onClick={() => navigate(`/projects/${p.id}`)}
-                      className="w-full rounded-lg border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
+                      className="w-full rounded-xl border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors duration-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="h-3 w-3 rounded-full" style={{ backgroundColor: p.color }} />
@@ -87,7 +87,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {data.recent_documents.map((doc) => (
                   <button key={doc.id} onClick={() => navigate(`/docs/${doc.id}`)}
-                    className="w-full rounded-lg border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
+                    className="w-full rounded-xl border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors duration-200">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium truncate">{doc.title}</span>
                       {doc.category && <span className="shrink-0 ml-2 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{doc.category}</span>}
@@ -104,7 +104,7 @@ export default function DashboardPage() {
       {isEmpty && (
         <div className="py-16 text-center text-muted-foreground">
           <FolderKanban size={48} className="mx-auto mb-4 opacity-20" />
-          <p className="text-lg">还没有数据</p>
+          <p className="text-lg font-medium">还没有数据</p>
           <p className="mt-1 text-sm">通过 AI 对话创建项目和文档</p>
         </div>
       )}
@@ -115,7 +115,7 @@ export default function DashboardPage() {
 function Stat({ icon, label, value, onClick }: { icon: React.ReactNode; label: string; value: number; onClick?: () => void }) {
   const Comp = onClick ? 'button' : 'div'
   return (
-    <Comp onClick={onClick} className="rounded-lg border border-border bg-card p-4 text-left active:bg-accent hover:bg-accent/50 transition-colors">
+    <Comp onClick={onClick} className="rounded-xl border border-border bg-card p-4 text-left active:bg-accent hover:bg-accent/50 transition-colors duration-200">
       <div className="flex items-center gap-2">{icon}<span className="text-xs text-muted-foreground">{label}</span></div>
       <div className="mt-1.5 text-2xl font-bold">{value}</div>
     </Comp>

@@ -64,7 +64,20 @@ apiRouter.use(authMiddleware);
 
 // --- Projects ---
 apiRouter.get('/projects', (_req, res) => {
-  const rows = getDb().prepare('SELECT * FROM projects ORDER BY position ASC').all();
+  const rows = getDb().prepare(`
+    SELECT p.*,
+      COALESCE(
+        MAX(
+          (SELECT MAX(t.updated_at) FROM tasks t JOIN columns c ON t.column_id = c.id JOIN boards b ON c.board_id = b.id WHERE b.project_id = p.id),
+          (SELECT MAX(d.updated_at) FROM documents d WHERE d.project_id = p.id),
+          p.updated_at
+        ),
+        p.updated_at
+      ) as last_activity_at
+    FROM projects p
+    GROUP BY p.id
+    ORDER BY last_activity_at DESC
+  `).all();
   res.json(rows);
 });
 

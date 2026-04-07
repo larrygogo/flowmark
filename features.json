@@ -302,10 +302,37 @@
       "id": "F034",
       "title": "新增项目改为抽屉式表单",
       "description": "新增项目改为抽屉（Drawer）形式，分组和标签使用 Sheet 选择器，支持在选择器内直接新增分组和标签",
-      "status": "planned",
+      "status": "done",
       "priority": "high",
       "module": "frontend",
       "tags": ["enhancement", "project", "ui"]
+    },
+    {
+      "id": "F035",
+      "title": "项目列表按最近修改排序",
+      "description": "项目列表取消分组显示，改为按最近修改时间排序，修改时间取项目内看板或文档的最新变更时间",
+      "status": "done",
+      "priority": "high",
+      "module": "both",
+      "tags": ["enhancement", "project", "ui"]
+    },
+    {
+      "id": "F036",
+      "title": "UI 组件风格统一",
+      "description": "统一所有 UI 组件的 Apple 风格：字体大小与字重、页面头部标题样式、列表项样式、按钮/输入框/卡片等组件保持一致的圆角、间距、颜色体系",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "ui", "design"]
+    },
+    {
+      "id": "F037",
+      "title": "筛选区域 UI 精简",
+      "description": "筛选区域在保持全部筛选功能的前提下简化 UI，减少视觉占用，交互更简洁实用",
+      "status": "done",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "ui", "design"]
     }
   ]
 }
