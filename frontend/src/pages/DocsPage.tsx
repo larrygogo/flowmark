@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { FileText, FolderOpen, Search } from 'lucide-react'
@@ -9,8 +9,10 @@ import type { Document } from '../types/index.ts'
 
 export default function DocsPage() {
   const [search, setSearch] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
   const [activeCategory, setActiveCategory] = useState('')
   const [activeProjectId, setActiveProjectId] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
@@ -36,36 +38,50 @@ export default function DocsPage() {
 
       {/* Filters row */}
       <div className="mt-3 flex gap-2 items-center">
-        <div className="relative flex-1">
+        <div className={cn('relative transition-all', searchFocused ? 'flex-1' : 'flex-1 md:flex-1')}>
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
+            ref={searchRef}
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => { if (!search) setSearchFocused(false) }}
             placeholder="搜索..."
             className="w-full rounded-lg border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        <select
-          value={activeCategory}
-          onChange={(e) => setActiveCategory(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">全部分类</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>{cat.name} ({cat.doc_count})</option>
-          ))}
-        </select>
-        <select
-          value={activeProjectId}
-          onChange={(e) => setActiveProjectId(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">全部项目</option>
-          {projects.filter(p => !p.archived).map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+        {searchFocused ? (
+          <button
+            onClick={() => { setSearch(''); setSearchFocused(false); searchRef.current?.blur() }}
+            className="shrink-0 text-sm text-primary"
+          >
+            取消
+          </button>
+        ) : (
+          <>
+            <select
+              value={activeCategory}
+              onChange={(e) => setActiveCategory(e.target.value)}
+              className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">分类</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.name}>{cat.name} ({cat.doc_count})</option>
+              ))}
+            </select>
+            <select
+              value={activeProjectId}
+              onChange={(e) => setActiveProjectId(e.target.value)}
+              className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">项目</option>
+              {projects.filter(p => !p.archived).map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </>
+        )}
       </div>
 
       {/* Document list */}
