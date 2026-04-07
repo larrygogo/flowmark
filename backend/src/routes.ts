@@ -289,6 +289,25 @@ apiRouter.get('/documents/:id', (req, res) => {
   res.json(doc);
 });
 
+apiRouter.put('/documents/:id', (req, res) => {
+  const db = getDb();
+  const existing = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id) as any;
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  const { title, content, tags, status } = req.body;
+  db.prepare(
+    "UPDATE documents SET title=?, content=?, tags=?, status=?, updated_at=datetime('now') WHERE id=?"
+  ).run(
+    title ?? existing.title,
+    content ?? existing.content,
+    tags ? JSON.stringify(tags) : existing.tags,
+    status ?? existing.status,
+    req.params.id
+  );
+  // Keep FTS in sync (triggers handle this automatically)
+  const doc = db.prepare('SELECT d.*, c.name as category, p.name as project_name, p.color as project_color FROM documents d LEFT JOIN categories c ON d.category_id = c.id LEFT JOIN projects p ON d.project_id = p.id WHERE d.id = ?').get(req.params.id);
+  res.json(doc);
+});
+
 // --- Dashboard ---
 apiRouter.get('/dashboard', (_req, res) => {
   const db = getDb();

@@ -342,6 +342,15 @@
       "priority": "high",
       "module": "frontend",
       "tags": ["bugfix", "ui", "mobile"]
+    },
+    {
+      "id": "F039",
+      "title": "项目详情页和文档页增加编辑功能",
+      "description": "项目详情页和文档（文章）页面缺少编辑入口，需添加编辑按钮支持在页面内直接编辑项目信息和文档内容",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "project", "knowledge-base", "ui"]
     }
   ]
 }

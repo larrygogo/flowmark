@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Calendar, GitBranch, AlertTriangle, Search, LayoutList, FileText, Plus, BarChart3, CheckCircle2, Circle, Clock } from 'lucide-react'
-import { getProject, listTasks, listDocuments, createTask, type ProjectDetail, type BoardWithColumns } from '../api/projects.ts'
+import { ArrowLeft, Calendar, GitBranch, AlertTriangle, Search, LayoutList, FileText, Plus, BarChart3, CheckCircle2, Circle, Clock, Pencil } from 'lucide-react'
+import { getProject, listTasks, listDocuments, createTask, updateProject, type ProjectDetail, type BoardWithColumns } from '../api/projects.ts'
+import Drawer from '../components/Drawer.tsx'
 import { cn, parseTags } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import type { Task, Column, Document } from '../types/index.ts'
@@ -21,6 +22,12 @@ export default function ProjectDetailPage() {
   const [taskPriority, setTaskPriority] = useState('')
   const [addingInColumn, setAddingInColumn] = useState<string | null>(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [showEditDrawer, setShowEditDrawer] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editGithub, setEditGithub] = useState('')
+  const [editColor, setEditColor] = useState('')
+  const [editGroup, setEditGroup] = useState('')
   const qc = useQueryClient()
 
   const board = project?.boards?.[boardIdx]
@@ -36,8 +43,21 @@ export default function ProjectDetailPage() {
     mutationFn: createTask,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks', board?.id] }),
   })
+  const updateProjectMutation = useMutation({
+    mutationFn: (data: Parameters<typeof updateProject>[1]) => updateProject(id!, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project', id] }); setShowEditDrawer(false) },
+  })
 
   if (isLoading || !project) return <div className="p-4 text-muted-foreground">加载中...</div>
+
+  const openEditDrawer = () => {
+    setEditName(project.name)
+    setEditDesc(project.description)
+    setEditGithub(project.github_url || '')
+    setEditColor(project.color)
+    setEditGroup(project.group_name)
+    setShowEditDrawer(true)
+  }
 
   const boards = project.boards ?? []
 
@@ -62,6 +82,9 @@ export default function ProjectDetailPage() {
           <button onClick={() => navigate('/projects')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
           <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
           <h1 className="min-w-0 flex-1 truncate font-bold">{project.name}</h1>
+          <button onClick={openEditDrawer} className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="编辑项目">
+            <Pencil size={18} />
+          </button>
         </div>
         {(project.group_name || parseTags(project.tags).length > 0) && (
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground ml-8">
@@ -190,6 +213,29 @@ export default function ProjectDetailPage() {
           )}
         </div>
       )}
+
+      {/* Edit project drawer */}
+      <Drawer open={showEditDrawer} onClose={() => setShowEditDrawer(false)} title="编辑项目">
+        <form onSubmit={(e) => { e.preventDefault(); updateProjectMutation.mutate({ name: editName.trim(), description: editDesc.trim(), github_url: editGithub.trim() || undefined, color: editColor, group_name: editGroup }) }} className="space-y-4">
+          <input type="text" placeholder="项目名称" value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus
+            className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <input type="text" placeholder="描述（可选）" value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
+            className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <input type="text" placeholder="GitHub URL（可选）" value={editGithub} onChange={(e) => setEditGithub(e.target.value)}
+            className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <input type="text" placeholder="分组" value={editGroup} onChange={(e) => setEditGroup(e.target.value)}
+            className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">项目颜色</span>
+            <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)}
+              className="h-9 w-9 rounded-xl border border-border bg-background p-0.5" />
+          </div>
+          <button type="submit" disabled={!editName.trim() || updateProjectMutation.isPending}
+            className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            {updateProjectMutation.isPending ? '...' : '保存'}
+          </button>
+        </form>
+      </Drawer>
     </div>
   )
 }

@@ -68,3 +68,8 @@ export async function getDocument(id: string) {
   const { data } = await api.get<Document>(`/documents/${id}`)
   return data
 }
+
+export async function updateDocument(id: string, req: { title?: string; content?: string; tags?: string[]; status?: string }) {
+  const { data } = await api.put<Document>(`/documents/${id}`, req)
+  return data
+}
