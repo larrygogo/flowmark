@@ -216,8 +216,13 @@ apiRouter.get('/documents', (req, res) => {
   const countParams: any[] = [];
 
   if (search && String(search).trim()) {
-    const term = String(search).trim();
-    // FTS5 search with snippet for matched content
+    // FTS5 prefix matching: split into tokens, append * for prefix search, join with AND
+    const ftsQuery = String(search).trim()
+      .replace(/['"(){}[\]^~@:]/g, ' ')  // strip FTS5 special chars
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(w => `"${w}"*`)
+      .join(' AND ');
     sql = `SELECT d.id, d.title, d.status, d.pinned, d.tags, c.name as category, d.project_id, p.name as project_name, d.created_at, d.updated_at,
       snippet(documents_fts, 1, '<<', '>>', '...', 32) as match_snippet
       FROM documents_fts fts
@@ -226,8 +231,8 @@ apiRouter.get('/documents', (req, res) => {
       LEFT JOIN projects p ON d.project_id = p.id
       WHERE documents_fts MATCH ?`;
     countSql = `SELECT COUNT(*) as c FROM documents_fts fts JOIN documents d ON d.rowid = fts.rowid LEFT JOIN categories c ON d.category_id = c.id WHERE documents_fts MATCH ?`;
-    params.push(term);
-    countParams.push(term);
+    params.push(ftsQuery);
+    countParams.push(ftsQuery);
   } else {
     sql = `SELECT d.id, d.title, d.status, d.pinned, d.tags, c.name as category, d.project_id, p.name as project_name, d.created_at, d.updated_at
       FROM documents d LEFT JOIN categories c ON d.category_id = c.id LEFT JOIN projects p ON d.project_id = p.id WHERE 1=1`;

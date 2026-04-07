@@ -207,6 +207,105 @@
       "priority": "high",
       "module": "frontend",
       "tags": ["bugfix", "project", "knowledge-base", "navigation"]
+    },
+    {
+      "id": "F024",
+      "title": "项目分类与分组展示",
+      "description": "项目增加分类（个人项目/公司项目），列表按分类分组显示，支持自由输入分组名",
+      "status": "done",
+      "priority": "medium",
+      "module": "both",
+      "tags": ["enhancement", "project", "ui"]
+    },
+    {
+      "id": "F025",
+      "title": "项目顶部筛选与文档关联跳转",
+      "description": "项目顶部筛选功能，文档详情显示关联项目并可点击跳转",
+      "status": "done",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "project", "knowledge-base", "ui"]
+    },
+    {
+      "id": "F026",
+      "title": "PC 端宽屏适配",
+      "description": "PC 端宽布局、多列网格、hover 效果优化",
+      "status": "done",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "ui", "layout"]
+    },
+    {
+      "id": "F027",
+      "title": "Markdown 渲染优化",
+      "description": "GitHub Dark 风格 Markdown 渲染，禁用只读区域文本选择和闪烁光标",
+      "status": "done",
+      "priority": "low",
+      "module": "frontend",
+      "tags": ["enhancement", "ui"]
+    },
+    {
+      "id": "F028",
+      "title": "文档 Markdown 下载",
+      "description": "文档详情页添加 Markdown 下载按钮",
+      "status": "done",
+      "priority": "low",
+      "module": "frontend",
+      "tags": ["enhancement", "knowledge-base"]
+    },
+    {
+      "id": "F029",
+      "title": "知识库全文搜索与分页",
+      "description": "知识库 FTS5 全文搜索，后端支持分页查询",
+      "status": "done",
+      "priority": "high",
+      "module": "both",
+      "tags": ["enhancement", "knowledge-base"]
+    },
+    {
+      "id": "F030",
+      "title": "项目详情概览页",
+      "description": "项目详情默认显示概览页，包含任务统计、进度、逾期和高优任务，描述和仓库移至概览",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "project", "ui"]
+    },
+    {
+      "id": "F031",
+      "title": "Apple 设计风格全局改版",
+      "description": "整体 UI 风格改为苹果 macOS/iOS 风格：毛玻璃效果、圆角卡片、SF 字体、细线分隔、浅色阴影、简洁留白、系统级动画过渡",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "ui", "design"]
+    },
+    {
+      "id": "F032",
+      "title": "PWA 支持",
+      "description": "添加 PWA 支持：manifest、Service Worker、可安装到桌面/主屏幕、加载画面、静默更新（后台检测新版本自动更新缓存）",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "pwa", "performance"]
+    },
+    {
+      "id": "F033",
+      "title": "文档模糊搜索修复",
+      "description": "知识库文档搜索无法匹配部分关键词（如输入 web 返回空结果），需修复 FTS5 搜索逻辑支持前缀匹配和模糊查询",
+      "status": "done",
+      "priority": "high",
+      "module": "backend",
+      "tags": ["bugfix", "knowledge-base"]
+    },
+    {
+      "id": "F034",
+      "title": "新增项目改为抽屉式表单",
+      "description": "新增项目改为抽屉（Drawer）形式，分组和标签使用 Sheet 选择器，支持在选择器内直接新增分组和标签",
+      "status": "planned",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "project", "ui"]
     }
   ]
 }
