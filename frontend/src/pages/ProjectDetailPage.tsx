@@ -63,14 +63,12 @@ export default function ProjectDetailPage() {
           <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
           <h1 className="min-w-0 flex-1 truncate font-bold">{project.name}</h1>
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground ml-8">
-          {project.group_name && <span className="rounded-full bg-muted px-2 py-0.5">{project.group_name}</span>}
-          {parseTags(project.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
-          {project.github_url && (
-            <span className="flex items-center gap-1"><GitBranch size={12} />{project.github_owner}/{project.github_repo}</span>
-          )}
-          {project.description && <span>{project.description}</span>}
-        </div>
+        {(project.group_name || parseTags(project.tags).length > 0) && (
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground ml-8">
+            {project.group_name && <span className="rounded-full bg-muted px-2 py-0.5">{project.group_name}</span>}
+            {parseTags(project.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
+          </div>
+        )}
       </div>
 
       {/* View tabs */}
@@ -231,9 +229,18 @@ function ProjectOverview({ project, tasks, docs, boards, navigate, id }: {
 
   return (
     <div className="p-4 space-y-4">
-      {/* Description */}
-      {project.description && (
-        <p className="text-sm text-muted-foreground">{project.description}</p>
+      {/* Description & repo */}
+      {(project.description || project.github_url) && (
+        <div className="space-y-1.5">
+          {project.description && <p className="text-sm text-muted-foreground">{project.description}</p>}
+          {project.github_url && (
+            <a href={project.github_url} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <GitBranch size={14} />
+              <span>{project.github_owner}/{project.github_repo}</span>
+            </a>
+          )}
+        </div>
       )}
 
       {/* Stats cards */}

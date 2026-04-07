@@ -134,7 +134,10 @@ export default function ProjectListPage() {
                             <FolderKanban size={20} />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="truncate font-medium">{p.name}</div>
+                            <div className="flex items-center gap-1.5 truncate font-medium">
+                              {p.github_url && <GitBranch size={14} className="shrink-0 text-muted-foreground" />}
+                              <span className="truncate">{p.name}</span>
+                            </div>
                             {p.description && <div className="truncate text-sm text-muted-foreground">{p.description}</div>}
                             {parseTags(p.tags).length > 0 && (
                               <div className="mt-1 flex flex-wrap gap-1">
@@ -144,7 +147,6 @@ export default function ProjectListPage() {
                           </div>
                         </button>
                         <div className="flex shrink-0 gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                          {p.github_url && <GitBranch size={14} className="text-muted-foreground" />}
                           <button onClick={() => setEditingProject(p)} className="p-1 text-muted-foreground hover:text-foreground"><Pencil size={14} /></button>
                           <button onClick={() => { if (confirm(`删除项目「${p.name}」？`)) deleteMutation.mutate(p.id) }}
                             className="p-1 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
