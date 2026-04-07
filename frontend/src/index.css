@@ -28,7 +28,9 @@ body {
   cursor: default;
 }
 
-button, select, input, a { cursor: default; }
+button, select, a { cursor: default; user-select: none; }
+body { user-select: none; -webkit-user-select: none; caret-color: transparent; }
+input, textarea { user-select: text; -webkit-user-select: text; caret-color: auto; }
 
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
