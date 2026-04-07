@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { FolderKanban, GitBranch, Archive } from 'lucide-react'
 import { listProjects } from '../api/projects.ts'
-import { cn } from '../lib/utils.ts'
+import { cn, parseTags } from '../lib/utils.ts'
 
 export default function ProjectListPage() {
   const { data: projects = [], isLoading } = useQuery({ queryKey: ['projects'], queryFn: listProjects })
@@ -47,6 +47,11 @@ export default function ProjectListPage() {
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{p.name}</div>
               {p.description && <div className="truncate text-sm text-muted-foreground">{p.description}</div>}
+              {parseTags(p.tags).length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {parseTags(p.tags).map(t => <span key={t} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{t}</span>)}
+                </div>
+              )}
             </div>
             {p.github_url && <GitBranch size={16} className="shrink-0 text-muted-foreground" />}
           </button>

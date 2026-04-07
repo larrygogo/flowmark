@@ -40,14 +40,14 @@ server.tool('get_project', '获取项目详情（含看板、列、任务数）'
 });
 
 server.tool('create_project', '创建新项目', {
-  name: z.string(), description: z.string().optional(), github_url: z.string().optional(), color: z.string().optional(),
-}, ({ name, description, github_url, color }) => {
+  name: z.string(), description: z.string().optional(), github_url: z.string().optional(), color: z.string().optional(), tags: z.array(z.string()).optional(),
+}, ({ name, description, github_url, color, tags }) => {
   const db = getDb();
   const id = uuid();
   const [go, gr] = parseGithubUrl(github_url);
   const maxPos = (db.prepare('SELECT MAX(position) as m FROM projects').get() as any)?.m ?? -1;
-  db.prepare('INSERT INTO projects (id, name, description, github_url, github_owner, github_repo, color, position) VALUES (?,?,?,?,?,?,?,?)')
-    .run(id, name, description || '', github_url || null, go, gr, color || '#6366f1', maxPos + 1);
+  db.prepare('INSERT INTO projects (id, name, description, tags, github_url, github_owner, github_repo, color, position) VALUES (?,?,?,?,?,?,?,?,?)')
+    .run(id, name, description || '', JSON.stringify(tags || []), github_url || null, go, gr, color || '#6366f1', maxPos + 1);
   const boardId = uuid();
   db.prepare('INSERT INTO boards (id, project_id, name, position) VALUES (?,?,?,0)').run(boardId, id, 'Default');
   for (const [cn, cc, cp] of [['Todo', '#94a3b8', 0], ['In Progress', '#6366f1', 1], ['Done', '#22c55e', 2]] as const) {
@@ -168,8 +168,9 @@ server.tool('create_document', '创建文档', {
   content: z.string().describe('Markdown 内容'),
   category: z.string().optional().describe('分类名称（不存在会自动创建）'),
   project_name: z.string().optional().describe('关联项目名称'),
+  tags: z.array(z.string()).optional().describe('标签'),
   status: z.enum(['draft', 'published', 'to_verify', 'archived']).optional(),
-}, ({ title, content, category, project_name, status }) => {
+}, ({ title, content, category, project_name, tags, status }) => {
   const db = getDb();
   let categoryId: string | null = null;
   if (category) {
@@ -188,8 +189,8 @@ server.tool('create_document', '创建文档', {
     if (p) projectId = p.id;
   }
   const id = uuid();
-  db.prepare('INSERT INTO documents (id, category_id, project_id, title, content, status) VALUES (?,?,?,?,?,?)')
-    .run(id, categoryId, projectId, title, content, status || 'published');
+  db.prepare('INSERT INTO documents (id, category_id, project_id, title, content, tags, status) VALUES (?,?,?,?,?,?,?)')
+    .run(id, categoryId, projectId, title, content, JSON.stringify(tags || []), status || 'published');
   return { content: [{ type: 'text', text: JSON.stringify({ id, title, message: 'Document created' }) }] };
 });
 
@@ -198,9 +199,10 @@ server.tool('update_document', '更新文档', {
   title: z.string().optional(),
   content: z.string().optional(),
   category: z.string().optional(),
+  tags: z.array(z.string()).optional().describe('标签'),
   status: z.enum(['draft', 'published', 'to_verify', 'archived']).optional(),
   pinned: z.boolean().optional(),
-}, ({ doc_id, title, content, category, status, pinned }) => {
+}, ({ doc_id, title, content, category, tags, status, pinned }) => {
   const db = getDb();
   const existing = db.prepare('SELECT * FROM documents WHERE id = ?').get(doc_id) as any;
   if (!existing) return { content: [{ type: 'text', text: 'Document not found' }], isError: true };
@@ -215,8 +217,8 @@ server.tool('update_document', '更新文档', {
     }
   }
 
-  db.prepare('UPDATE documents SET title=?, content=?, category_id=?, status=?, pinned=?, updated_at=datetime(\'now\') WHERE id=?')
-    .run(title ?? existing.title, content ?? existing.content, categoryId, status ?? existing.status, pinned !== undefined ? (pinned ? 1 : 0) : existing.pinned, doc_id);
+  db.prepare('UPDATE documents SET title=?, content=?, category_id=?, tags=?, status=?, pinned=?, updated_at=datetime(\'now\') WHERE id=?')
+    .run(title ?? existing.title, content ?? existing.content, categoryId, tags ? JSON.stringify(tags) : existing.tags, status ?? existing.status, pinned !== undefined ? (pinned ? 1 : 0) : existing.pinned, doc_id);
   return { content: [{ type: 'text', text: JSON.stringify({ doc_id, message: 'Document updated' }) }] };
 });
 

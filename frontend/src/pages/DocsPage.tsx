@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { FileText, FolderOpen, Search } from 'lucide-react'
 import { listCategories, listDocuments, listProjects } from '../api/projects.ts'
-import { cn } from '../lib/utils.ts'
+import { cn, parseTags } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import type { Document } from '../types/index.ts'
 
@@ -85,6 +85,7 @@ export default function DocsPage() {
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                     {doc.category && <span className="rounded-full bg-muted px-2 py-0.5">{doc.category}</span>}
                     {doc.project_name && <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5">{doc.project_name}</span>}
+                    {parseTags(doc.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
                     <span>{dayjs(doc.updated_at).format('YYYY-MM-DD')}</span>
                   </div>
                 </div>

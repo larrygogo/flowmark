@@ -5,6 +5,7 @@ import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import { getDocument } from '../api/projects.ts'
+import { parseTags } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import 'highlight.js/styles/github-dark.min.css'
 
@@ -36,6 +37,7 @@ export default function DocDetailPage() {
             {d.project_name}
           </button>
         )}
+        {parseTags(doc.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
         <span>更新于 {dayjs(doc.updated_at).format('YYYY-MM-DD HH:mm')}</span>
       </div>
 

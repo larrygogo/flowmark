@@ -3,6 +3,7 @@ export interface Project {
   name: string
   description: string
   group_name: string
+  tags: string[] | string
   github_url: string | null
   github_owner: string | null
   github_repo: string | null
@@ -63,6 +64,7 @@ export interface Document {
   project_id: string | null
   title: string
   content: string
+  tags: string[] | string
   status: 'draft' | 'published' | 'to_verify' | 'archived'
   pinned: boolean
   category: string | null
