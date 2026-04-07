@@ -104,13 +104,13 @@ apiRouter.get('/projects/:id', (req, res) => {
 
 apiRouter.put('/projects/:id', (req, res) => {
   const db = getDb();
-  const { name, description, github_url, color, archived } = req.body;
+  const { name, description, github_url, color, archived, group_name, tags } = req.body;
   const existing = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id) as any;
   if (!existing) return res.status(404).json({ error: 'Not found' });
   const [go, gr] = parseGithubUrl(github_url ?? existing.github_url);
   db.prepare(
-    'UPDATE projects SET name=?, description=?, github_url=?, github_owner=?, github_repo=?, color=?, archived=?, updated_at=datetime(\'now\') WHERE id=?'
-  ).run(name ?? existing.name, description ?? existing.description, github_url ?? existing.github_url, go, gr, color ?? existing.color, archived ?? existing.archived, req.params.id);
+    'UPDATE projects SET name=?, description=?, group_name=?, tags=?, github_url=?, github_owner=?, github_repo=?, color=?, archived=?, updated_at=datetime(\'now\') WHERE id=?'
+  ).run(name ?? existing.name, description ?? existing.description, group_name ?? existing.group_name, tags ? JSON.stringify(tags) : existing.tags, github_url ?? existing.github_url, go, gr, color ?? existing.color, archived ?? existing.archived, req.params.id);
   res.json(db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id));
 });
 

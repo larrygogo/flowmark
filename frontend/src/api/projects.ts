@@ -23,6 +23,20 @@ export async function getProject(id: string) {
   return data
 }
 
+export async function createProject(req: { name: string; description?: string; github_url?: string; color?: string; group_name?: string }) {
+  const { data } = await api.post<Project>('/projects', req)
+  return data
+}
+
+export async function updateProject(id: string, req: { name?: string; description?: string; github_url?: string; color?: string; group_name?: string; archived?: boolean }) {
+  const { data } = await api.put<Project>(`/projects/${id}`, req)
+  return data
+}
+
+export async function deleteProject(id: string) {
+  await api.delete(`/projects/${id}`)
+}
+
 export async function listTasks(params: { board_id?: string; project_id?: string }) {
   const { data } = await api.get<Task[]>('/tasks', { params })
   return data
