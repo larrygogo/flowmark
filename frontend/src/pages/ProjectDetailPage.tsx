@@ -163,7 +163,7 @@ export default function ProjectDetailPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {docs.map((doc: Document & { project_name?: string }) => (
-                <button key={doc.id} onClick={() => navigate(`/docs/${doc.id}`)}
+                <button key={doc.id} onClick={() => navigate(`/docs/${doc.id}?from=project&pid=${id}`)}
                   className="rounded-lg border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
                   <div className="flex items-start gap-2">
                     <FileText size={16} className="mt-0.5 shrink-0 text-muted-foreground" />

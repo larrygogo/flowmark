@@ -198,6 +198,15 @@
       "priority": "medium",
       "module": "frontend",
       "tags": ["bugfix", "project", "ui"]
+    },
+    {
+      "id": "F023",
+      "title": "项目内文档返回导航修复",
+      "description": "从项目页面打开文档后，点击返回应回到项目页面而非知识库页面",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["bugfix", "project", "knowledge-base", "navigation"]
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, FileText } from 'lucide-react'
 import Markdown from 'react-markdown'
@@ -12,6 +12,9 @@ import 'highlight.js/styles/github-dark.min.css'
 export default function DocDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const fromProject = searchParams.get('from') === 'project'
+  const projectId = searchParams.get('pid')
   const { data: doc, isLoading } = useQuery({ queryKey: ['document', id], queryFn: () => getDocument(id!), enabled: !!id })
 
   if (isLoading || !doc) return <div className="p-4 text-muted-foreground">加载中...</div>
@@ -21,7 +24,7 @@ export default function DocDetailPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <button onClick={() => navigate('/docs')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
+        <button onClick={() => navigate(fromProject && projectId ? `/projects/${projectId}` : '/docs')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
         <FileText size={18} className="text-muted-foreground" />
         <h1 className="min-w-0 flex-1 truncate font-bold">{doc.title}</h1>
       </div>
