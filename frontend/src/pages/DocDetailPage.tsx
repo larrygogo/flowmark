@@ -1,8 +1,12 @@
 import { useParams, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, FileText } from 'lucide-react'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 import { getDocument } from '../api/projects.ts'
 import dayjs from 'dayjs'
+import 'highlight.js/styles/github-dark.min.css'
 
 export default function DocDetailPage() {
   const { id } = useParams()
@@ -24,9 +28,16 @@ export default function DocDetailPage() {
         <span>更新于 {dayjs(doc.updated_at).format('YYYY-MM-DD HH:mm')}</span>
       </div>
 
-      <article className="prose prose-invert prose-sm max-w-none px-4 py-4">
-        {/* Simple markdown rendering — just whitespace preserved */}
-        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">{doc.content}</pre>
+      <article className="px-4 py-4 prose prose-invert prose-sm max-w-none
+        prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground
+        prose-a:text-primary prose-code:text-primary prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+        prose-pre:bg-[#0d1117] prose-pre:border prose-pre:border-border prose-pre:rounded-lg
+        prose-table:text-foreground/90 prose-th:border-border prose-td:border-border
+        prose-li:text-foreground/90 prose-blockquote:border-primary/50 prose-blockquote:text-muted-foreground
+        prose-hr:border-border">
+        <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+          {doc.content}
+        </Markdown>
       </article>
     </div>
   )
