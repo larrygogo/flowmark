@@ -15,6 +15,8 @@ export default function DocDetailPage() {
 
   if (isLoading || !doc) return <div className="p-4 text-muted-foreground">加载中...</div>
 
+  const d = doc as typeof doc & { project_name?: string; project_color?: string }
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -23,8 +25,17 @@ export default function DocDetailPage() {
         <h1 className="min-w-0 flex-1 truncate font-bold">{doc.title}</h1>
       </div>
 
-      <div className="px-4 py-2 flex items-center gap-2 text-xs text-muted-foreground border-b border-border">
+      <div className="px-4 py-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground border-b border-border">
         {doc.category && <span className="rounded-full bg-muted px-2 py-0.5">{doc.category}</span>}
+        {d.project_name && (
+          <button
+            onClick={() => navigate(`/projects/${doc.project_id}`)}
+            className="flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5"
+          >
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: d.project_color }} />
+            {d.project_name}
+          </button>
+        )}
         <span>更新于 {dayjs(doc.updated_at).format('YYYY-MM-DD HH:mm')}</span>
       </div>
 

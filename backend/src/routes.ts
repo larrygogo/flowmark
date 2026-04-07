@@ -215,7 +215,7 @@ apiRouter.get('/documents', (req, res) => {
 });
 
 apiRouter.get('/documents/:id', (req, res) => {
-  const doc = getDb().prepare('SELECT d.*, c.name as category FROM documents d LEFT JOIN categories c ON d.category_id = c.id WHERE d.id = ?').get(req.params.id);
+  const doc = getDb().prepare('SELECT d.*, c.name as category, p.name as project_name, p.color as project_color FROM documents d LEFT JOIN categories c ON d.category_id = c.id LEFT JOIN projects p ON d.project_id = p.id WHERE d.id = ?').get(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Not found' });
   res.json(doc);
 });
