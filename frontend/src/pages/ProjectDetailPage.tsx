@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Calendar, GitBranch, AlertTriangle, Search, LayoutList, FileText } from 'lucide-react'
-import { getProject, listTasks, listDocuments } from '../api/projects.ts'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, Calendar, GitBranch, AlertTriangle, Search, LayoutList, FileText, Plus } from 'lucide-react'
+import { getProject, listTasks, listDocuments, createTask } from '../api/projects.ts'
 import { cn, parseTags } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import type { Task, Column, Document } from '../types/index.ts'
@@ -19,6 +19,9 @@ export default function ProjectDetailPage() {
   const [boardIdx, setBoardIdx] = useState(0)
   const [taskSearch, setTaskSearch] = useState('')
   const [taskPriority, setTaskPriority] = useState('')
+  const [addingInColumn, setAddingInColumn] = useState<string | null>(null)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const qc = useQueryClient()
 
   const board = project?.boards?.[boardIdx]
   const { data: tasks = [] } = useQuery({ queryKey: ['tasks', board?.id], queryFn: () => listTasks({ board_id: board!.id }), enabled: !!board })
@@ -26,6 +29,11 @@ export default function ProjectDetailPage() {
     queryKey: ['project-docs', id],
     queryFn: () => listDocuments({ project_id: id!, limit: 200 }),
     enabled: !!id,
+  })
+
+  const createTaskMutation = useMutation({
+    mutationFn: createTask,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks', board?.id] }),
   })
 
   if (isLoading || !project) return <div className="p-4 text-muted-foreground">加载中...</div>
@@ -48,16 +56,21 @@ export default function ProjectDetailPage() {
   return (
     <div className="mx-auto max-w-5xl">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <button onClick={() => navigate('/projects')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
-        <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
-        <h1 className="min-w-0 flex-1 truncate font-bold">{project.name}</h1>
-        {project.github_url && <GitBranch size={16} className="text-muted-foreground" />}
+      <div className="border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/projects')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
+          <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
+          <h1 className="min-w-0 flex-1 truncate font-bold">{project.name}</h1>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground ml-8">
+          {project.group_name && <span className="rounded-full bg-muted px-2 py-0.5">{project.group_name}</span>}
+          {parseTags(project.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
+          {project.github_url && (
+            <span className="flex items-center gap-1"><GitBranch size={12} />{project.github_owner}/{project.github_repo}</span>
+          )}
+          {project.description && <span>{project.description}</span>}
+        </div>
       </div>
-
-      {project.description && (
-        <div className="px-4 py-2 text-sm text-muted-foreground">{project.description}</div>
-      )}
 
       {/* View tabs: 看板 / 文档 */}
       <div className="flex items-center gap-1 border-b border-border px-4 py-2">
@@ -115,10 +128,19 @@ export default function ProjectDetailPage() {
                       <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: col.color }} />
                       <span className="flex-1 text-sm font-medium">{col.name}</span>
                       <span className="text-xs text-muted-foreground">{colTasks.length}</span>
+                      <button onClick={() => { setAddingInColumn(col.id); setNewTaskTitle('') }} className="text-muted-foreground hover:text-foreground"><Plus size={16} /></button>
                     </div>
                     <div className="space-y-2 p-2 min-h-[80px]">
+                      {addingInColumn === col.id && (
+                        <form onSubmit={(e) => { e.preventDefault(); if (newTaskTitle.trim()) { createTaskMutation.mutate({ column_id: col.id, title: newTaskTitle.trim() }); setNewTaskTitle(''); setAddingInColumn(null) } }}>
+                          <input type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} placeholder="任务标题"
+                            autoFocus onBlur={() => { if (!newTaskTitle.trim()) setAddingInColumn(null) }}
+                            onKeyDown={(e) => { if (e.key === 'Escape') setAddingInColumn(null) }}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                        </form>
+                      )}
                       {colTasks.map((task) => <TaskItem key={task.id} task={task} />)}
-                      {colTasks.length === 0 && (
+                      {colTasks.length === 0 && addingInColumn !== col.id && (
                         <div className="flex items-center justify-center h-16 text-xs text-muted-foreground opacity-40">空</div>
                       )}
                     </div>

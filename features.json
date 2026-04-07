@@ -135,6 +135,69 @@
       "priority": "medium",
       "module": "frontend",
       "tags": ["enhancement", "project", "knowledge-base", "ui"]
+    },
+    {
+      "id": "F016",
+      "title": "移动端编辑删除按钮缺失",
+      "description": "编辑、删除等操作按钮在移动端未显示，需修复响应式布局确保移动端可操作",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["bugfix", "mobile", "ui"]
+    },
+    {
+      "id": "F017",
+      "title": "项目筛选增强",
+      "description": "项目列表增加模糊搜索和按标签查询功能",
+      "status": "done",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "project", "ui"]
+    },
+    {
+      "id": "F018",
+      "title": "全局 Header 固定",
+      "description": "所有页面的 Header 固定在顶部，不随页面内容滚动",
+      "status": "done",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "ui", "layout"]
+    },
+    {
+      "id": "F019",
+      "title": "新增需求功能",
+      "description": "缺少新增需求的入口，需提供创建需求的功能",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "ui"]
+    },
+    {
+      "id": "F020",
+      "title": "知识库标签筛选与展示",
+      "description": "知识库增加按标签筛选功能，并在文档页面显示该文档的标签",
+      "status": "done",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "knowledge-base", "ui"]
+    },
+    {
+      "id": "F021",
+      "title": "项目页面编辑与详情展示",
+      "description": "项目页面支持编辑操作，并显示仓库地址、分类、标签等详细信息",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "project", "ui"]
+    },
+    {
+      "id": "F022",
+      "title": "新增项目支持标签",
+      "description": "新增项目时缺少标签输入功能，需在创建表单中增加标签字段",
+      "status": "done",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["bugfix", "project", "ui"]
     }
   ]
 }

@@ -42,6 +42,11 @@ export async function listTasks(params: { board_id?: string; project_id?: string
   return data
 }
 
+export async function createTask(req: { column_id: string; title: string; priority?: string }) {
+  const { data } = await api.post<Task>('/tasks', req)
+  return data
+}
+
 export async function listCategories() {
   const { data } = await api.get<Category[]>('/categories')
   return data

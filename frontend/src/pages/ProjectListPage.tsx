@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { FolderKanban, GitBranch, Archive, Plus, Pencil, Trash2, X } from 'lucide-react'
+import { FolderKanban, GitBranch, Archive, Plus, Pencil, Trash2, X, Search } from 'lucide-react'
 import { listProjects, createProject, updateProject, deleteProject } from '../api/projects.ts'
 import { parseTags } from '../lib/utils.ts'
 import type { Project } from '../types/index.ts'
@@ -9,6 +9,7 @@ import type { Project } from '../types/index.ts'
 export default function ProjectListPage() {
   const qc = useQueryClient()
   const { data: projects = [], isLoading } = useQuery({ queryKey: ['projects'], queryFn: listProjects })
+  const [search, setSearch] = useState('')
   const [activeGroup, setActiveGroup] = useState('')
   const [activeTag, setActiveTag] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -31,6 +32,7 @@ export default function ProjectListPage() {
   const filtered = active.filter(p => {
     if (activeGroup && p.group_name !== activeGroup) return false
     if (activeTag && !parseTags(p.tags).includes(activeTag)) return false
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.description.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
 
@@ -46,6 +48,11 @@ export default function ProjectListPage() {
 
       {/* Filters */}
       <div className="mt-3 flex gap-2 items-center">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜索..."
+            className="w-full rounded-lg border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+        </div>
         <select value={activeGroup} onChange={(e) => setActiveGroup(e.target.value)}
           className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
           <option value="">全部分类 ({active.length})</option>
@@ -96,7 +103,7 @@ export default function ProjectListPage() {
                   )}
                 </div>
               </button>
-              <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex shrink-0 gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 {p.github_url && <GitBranch size={14} className="text-muted-foreground" />}
                 <button onClick={() => setEditingProject(p)} className="p-1 text-muted-foreground hover:text-foreground"><Pencil size={14} /></button>
                 <button onClick={() => { if (confirm(`删除项目「${p.name}」？`)) deleteMutation.mutate(p.id) }}
@@ -138,7 +145,7 @@ export default function ProjectListPage() {
 
 function ProjectForm({ project, onSubmit, onCancel, loading }: {
   project: Project | null
-  onSubmit: (data: { name: string; description?: string; github_url?: string; color?: string; group_name?: string }) => void
+  onSubmit: (data: { name: string; description?: string; github_url?: string; color?: string; group_name?: string; tags?: string[] }) => void
   onCancel: () => void
   loading: boolean
 }) {
@@ -147,11 +154,13 @@ function ProjectForm({ project, onSubmit, onCancel, loading }: {
   const [githubUrl, setGithubUrl] = useState(project?.github_url || '')
   const [color, setColor] = useState(project?.color || '#6366f1')
   const [groupName, setGroupName] = useState(project?.group_name || '个人项目')
+  const [tagsText, setTagsText] = useState(() => parseTags(project?.tags).join(', '))
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
-    onSubmit({ name: name.trim(), description: description.trim() || undefined, github_url: githubUrl.trim() || undefined, color, group_name: groupName })
+    const tags = tagsText.split(',').map(s => s.trim()).filter(Boolean)
+    onSubmit({ name: name.trim(), description: description.trim() || undefined, github_url: githubUrl.trim() || undefined, color, group_name: groupName, tags: tags.length > 0 ? tags : undefined })
   }
 
   return (
@@ -165,6 +174,8 @@ function ProjectForm({ project, onSubmit, onCancel, loading }: {
       <input type="text" placeholder="描述（可选）" value={description} onChange={(e) => setDescription(e.target.value)}
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
       <input type="text" placeholder="GitHub URL（可选）" value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)}
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+      <input type="text" placeholder="标签（逗号分隔）" value={tagsText} onChange={(e) => setTagsText(e.target.value)}
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
       <div className="flex gap-3">
         <select value={groupName} onChange={(e) => setGroupName(e.target.value)}

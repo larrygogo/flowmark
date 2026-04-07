@@ -12,6 +12,7 @@ export default function DocsPage() {
   const [searchFocused, setSearchFocused] = useState(false)
   const [activeCategory, setActiveCategory] = useState('')
   const [activeProjectId, setActiveProjectId] = useState('')
+  const [activeTag, setActiveTag] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
@@ -26,10 +27,13 @@ export default function DocsPage() {
     }),
   })
 
-  const filtered = search
-    ? docs.filter((d: Document & { project_name?: string }) =>
-        d.title.toLowerCase().includes(search.toLowerCase()))
-    : docs
+  const allTags = [...new Set(docs.flatMap((d: Document) => parseTags(d.tags)))]
+
+  const filtered = docs.filter((d: Document & { project_name?: string }) => {
+    if (search && !d.title.toLowerCase().includes(search.toLowerCase())) return false
+    if (activeTag && !parseTags(d.tags).includes(activeTag)) return false
+    return true
+  })
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
@@ -62,6 +66,13 @@ export default function DocsPage() {
               <option value="">项目</option>
               {projects.filter(p => !p.archived).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
+            {allTags.length > 0 && (
+              <select value={activeTag} onChange={(e) => setActiveTag(e.target.value)}
+                className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="">标签</option>
+                {allTags.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            )}
           </>
         )}
       </div>
