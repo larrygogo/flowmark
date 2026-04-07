@@ -6,17 +6,17 @@ runMigrations();
 const db = getDb();
 
 const projects = [
-  { name: 'FlowMark', description: '个人工作流管理系统，人与 AI 的共享记忆层', github_url: 'https://github.com/larrygogo/flowmark', color: '#6366f1' },
-  { name: 'OpenClaw', description: 'AI Agent 框架，4-agent 架构，高性能网关', github_url: null, color: '#f59e0b' },
-  { name: 'ClawMo', description: 'OpenClaw Gateway iOS 客户端', github_url: 'https://github.com/larrygogo/ClawMo', color: '#3b82f6' },
-  { name: 'ClawMo-Push', description: 'OpenClaw APNs 推送插件', github_url: 'https://github.com/larrygogo/clawmo-push', color: '#8b5cf6' },
-  { name: 'ClawMo-Relay', description: 'APNs 推送中继服务 (Rust/Axum)', github_url: 'https://github.com/larrygogo/clawmo-relay', color: '#ec4899' },
-  { name: 'Autopilot', description: '轻量多阶段任务编排引擎 (Python)', github_url: 'https://github.com/larrygogo/autopilot', color: '#10b981' },
-  { name: 'XBot', description: '跨平台自动化购票系统 (Tauri + Rust)', github_url: 'https://github.com/ReverseGame/reverse-bot-gui', color: '#ef4444' },
-  { name: 'XBot-JS-Service', description: 'NestJS 服务端', github_url: 'https://github.com/ReverseGame/xbot-js-service', color: '#f97316' },
-  { name: 'Moretickets Auto-Pricer', description: 'Chrome 扩展，自动定价', github_url: 'https://github.com/ReverseGame/moretickets-auto-pricer', color: '#14b8a6' },
-  { name: 'ReqGenie', description: 'AI 驱动需求管理系统 (公司项目)', github_url: 'https://github.com/ReverseGame/reqgenie', color: '#a855f7' },
-  { name: 'CloudDash', description: '云资源管理面板', github_url: null, color: '#06b6d4' },
+  { name: 'FlowMark', description: '个人工作流管理系统，人与 AI 的共享记忆层', github_url: 'https://github.com/larrygogo/flowmark', color: '#6366f1', group: '个人项目' },
+  { name: 'OpenClaw', description: 'AI Agent 框架，4-agent 架构，高性能网关', github_url: null, color: '#f59e0b', group: '个人项目' },
+  { name: 'ClawMo', description: 'OpenClaw Gateway iOS 客户端', github_url: 'https://github.com/larrygogo/ClawMo', color: '#3b82f6', group: '个人项目' },
+  { name: 'ClawMo-Push', description: 'OpenClaw APNs 推送插件', github_url: 'https://github.com/larrygogo/clawmo-push', color: '#8b5cf6', group: '个人项目' },
+  { name: 'ClawMo-Relay', description: 'APNs 推送中继服务 (Rust/Axum)', github_url: 'https://github.com/larrygogo/clawmo-relay', color: '#ec4899', group: '个人项目' },
+  { name: 'Autopilot', description: '轻量多阶段任务编排引擎 (Python)', github_url: 'https://github.com/larrygogo/autopilot', color: '#10b981', group: '个人项目' },
+  { name: 'CloudDash', description: '云资源管理面板', github_url: null, color: '#06b6d4', group: '个人项目' },
+  { name: 'XBot', description: '跨平台自动化购票系统 (Tauri + Rust)', github_url: 'https://github.com/ReverseGame/reverse-bot-gui', color: '#ef4444', group: '公司项目' },
+  { name: 'XBot-JS-Service', description: 'NestJS 服务端', github_url: 'https://github.com/ReverseGame/xbot-js-service', color: '#f97316', group: '公司项目' },
+  { name: 'Moretickets Auto-Pricer', description: 'Chrome 扩展，自动定价', github_url: 'https://github.com/ReverseGame/moretickets-auto-pricer', color: '#14b8a6', group: '公司项目' },
+  { name: 'ReqGenie', description: 'AI 驱动需求管理系统', github_url: 'https://github.com/ReverseGame/reqgenie', color: '#a855f7', group: '公司项目' },
 ];
 
 function parseGithubUrl(url: string | null): [string | null, string | null] {
@@ -27,7 +27,7 @@ function parseGithubUrl(url: string | null): [string | null, string | null] {
 }
 
 const insertProject = db.prepare(
-  'INSERT OR IGNORE INTO projects (id, name, description, github_url, github_owner, github_repo, color, position) VALUES (?,?,?,?,?,?,?,?)'
+  'INSERT OR IGNORE INTO projects (id, name, description, group_name, github_url, github_owner, github_repo, color, position) VALUES (?,?,?,?,?,?,?,?,?)'
 );
 const insertBoard = db.prepare('INSERT INTO boards (id, project_id, name, position) VALUES (?,?,?,0)');
 const insertColumn = db.prepare('INSERT INTO columns (id, board_id, name, color, position) VALUES (?,?,?,?,?)');
@@ -41,7 +41,7 @@ const tx = db.transaction(() => {
     const id = uuid();
     const [owner, repo] = parseGithubUrl(p.github_url);
     pos++;
-    insertProject.run(id, p.name, p.description, p.github_url, owner, repo, p.color, pos);
+    insertProject.run(id, p.name, p.description, p.group, p.github_url, owner, repo, p.color, pos);
 
     const boardId = uuid();
     insertBoard.run(boardId, id, 'Default');

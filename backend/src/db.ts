@@ -28,6 +28,7 @@ export function runMigrations() {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       description TEXT NOT NULL DEFAULT '',
+      group_name TEXT NOT NULL DEFAULT '个人项目',
       github_url TEXT,
       github_owner TEXT,
       github_repo TEXT,

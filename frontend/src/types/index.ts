@@ -2,6 +2,7 @@ export interface Project {
   id: string
   name: string
   description: string
+  group_name: string
   github_url: string | null
   github_owner: string | null
   github_repo: string | null
