@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { FileText, FolderOpen, Search, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -12,12 +12,10 @@ const PAGE_SIZE = 20
 export default function DocsPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [searchFocused, setSearchFocused] = useState(false)
   const [activeCategory, setActiveCategory] = useState('')
   const [activeProjectId, setActiveProjectId] = useState('')
   const [activeTag, setActiveTag] = useState('')
   const [page, setPage] = useState(1)
-  const searchRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
   // Debounce search input
@@ -60,10 +58,8 @@ export default function DocsPage() {
       {/* Search */}
       <div className="mt-3 relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input ref={searchRef} type="text" value={search}
+        <input type="text" value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => { if (!search) setSearchFocused(false) }}
           placeholder="搜索标题和内容..."
           className="w-full rounded-xl border border-border bg-card pl-8 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
       </div>
