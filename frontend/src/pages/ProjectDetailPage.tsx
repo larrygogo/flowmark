@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Calendar, GitBranch, AlertTriangle, Search, LayoutList, FileText, Plus } from 'lucide-react'
-import { getProject, listTasks, listDocuments, createTask } from '../api/projects.ts'
+import { ArrowLeft, Calendar, GitBranch, AlertTriangle, Search, LayoutList, FileText, Plus, BarChart3, CheckCircle2, Circle, Clock } from 'lucide-react'
+import { getProject, listTasks, listDocuments, createTask, type ProjectDetail, type BoardWithColumns } from '../api/projects.ts'
 import { cn, parseTags } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import type { Task, Column, Document } from '../types/index.ts'
@@ -15,7 +15,7 @@ export default function ProjectDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { data: project, isLoading } = useQuery({ queryKey: ['project', id], queryFn: () => getProject(id!), enabled: !!id })
-  const [viewTab, setViewTab] = useState<'board' | 'docs'>('board')
+  const [viewTab, setViewTab] = useState<'overview' | 'board' | 'docs'>('overview')
   const [boardIdx, setBoardIdx] = useState(0)
   const [taskSearch, setTaskSearch] = useState('')
   const [taskPriority, setTaskPriority] = useState('')
@@ -73,8 +73,12 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* View tabs: 看板 / 文档 */}
+      {/* View tabs */}
       <div className="flex items-center gap-1 border-b border-border px-4 py-2">
+        <button onClick={() => setViewTab('overview')}
+          className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm', viewTab === 'overview' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
+          <BarChart3 size={14} /> 概览
+        </button>
         <button onClick={() => setViewTab('board')}
           className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm', viewTab === 'board' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
           <LayoutList size={14} /> 看板
@@ -97,6 +101,11 @@ export default function ProjectDetailPage() {
           </>
         )}
       </div>
+
+      {/* Overview */}
+      {viewTab === 'overview' && (
+        <ProjectOverview project={project} tasks={tasks} docs={docs} boards={boards} navigate={navigate} id={id!} />
+      )}
 
       {/* Board view */}
       {viewTab === 'board' && (
@@ -181,6 +190,142 @@ export default function ProjectDetailPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProjectOverview({ project, tasks, docs, boards, navigate, id }: {
+  project: ProjectDetail
+  tasks: Task[]
+  docs: (Document & { project_name?: string })[]
+  boards: BoardWithColumns[]
+  navigate: (path: string) => void
+  id: string
+}) {
+  // Compute task stats across all boards
+  const rootTasks = tasks.filter(t => !t.parent_task_id)
+  const totalTasks = rootTasks.length
+
+  // Categorize by column name
+  const doneColIds = new Set<string>()
+  const progressColIds = new Set<string>()
+  for (const b of boards) {
+    for (const col of b.columns) {
+      const n = col.name.toLowerCase()
+      if (n.includes('done') || n.includes('完成')) doneColIds.add(col.id)
+      else if (n.includes('progress') || n.includes('doing') || n.includes('进行')) progressColIds.add(col.id)
+    }
+  }
+  const doneTasks = rootTasks.filter(t => doneColIds.has(t.column_id)).length
+  const inProgressTasks = rootTasks.filter(t => progressColIds.has(t.column_id)).length
+  const todoTasks = totalTasks - doneTasks - inProgressTasks
+  const completionPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+
+  const overdueTasks = rootTasks.filter(t => isOverdue(t.due_date) && !doneColIds.has(t.column_id))
+  const recentDocs = docs.slice(0, 5)
+
+  // High priority tasks not done
+  const urgentTasks = rootTasks.filter(t => (t.priority === 'urgent' || t.priority === 'high') && !doneColIds.has(t.column_id))
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Description */}
+      {project.description && (
+        <p className="text-sm text-muted-foreground">{project.description}</p>
+      )}
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Circle size={12} /> 待办</div>
+          <div className="mt-1 text-2xl font-bold">{todoTasks}</div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock size={12} /> 进行中</div>
+          <div className="mt-1 text-2xl font-bold">{inProgressTasks}</div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 size={12} /> 已完成</div>
+          <div className="mt-1 text-2xl font-bold">{doneTasks}</div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><FileText size={12} /> 文档</div>
+          <div className="mt-1 text-2xl font-bold">{docs.length}</div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      {totalTasks > 0 && (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="font-medium">整体进度</span>
+            <span className="text-muted-foreground">{completionPct}%</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-muted">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${completionPct}%` }} />
+          </div>
+        </div>
+      )}
+
+      {/* Overdue tasks */}
+      {overdueTasks.length > 0 && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-destructive mb-2">
+            <AlertTriangle size={14} /> 逾期任务 ({overdueTasks.length})
+          </div>
+          <div className="space-y-1.5">
+            {overdueTasks.map(t => (
+              <div key={t.id} className="flex items-center gap-2 text-sm">
+                <div className={cn('h-2 w-2 shrink-0 rounded-full', priorityColors[t.priority])} />
+                <span className="flex-1 truncate">{t.title}</span>
+                <span className="shrink-0 text-xs text-destructive">{t.due_date}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Urgent/high priority tasks */}
+      {urgentTasks.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="text-sm font-medium mb-2">高优先级任务</div>
+          <div className="space-y-1.5">
+            {urgentTasks.slice(0, 5).map(t => (
+              <div key={t.id} className="flex items-center gap-2 text-sm">
+                <div className={cn('h-2 w-2 shrink-0 rounded-full', priorityColors[t.priority])} />
+                <span className="flex-1 truncate">{t.title}</span>
+                {t.due_date && <span className="shrink-0 text-xs text-muted-foreground">{t.due_date}</span>}
+              </div>
+            ))}
+            {urgentTasks.length > 5 && <div className="text-xs text-muted-foreground">还有 {urgentTasks.length - 5} 个...</div>}
+          </div>
+        </div>
+      )}
+
+      {/* Recent docs */}
+      {recentDocs.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="text-sm font-medium mb-2">最近文档</div>
+          <div className="space-y-1.5">
+            {recentDocs.map(doc => (
+              <button key={doc.id} onClick={() => navigate(`/docs/${doc.id}?from=project&pid=${id}`)}
+                className="flex items-center gap-2 text-sm w-full text-left hover:text-primary transition-colors">
+                <FileText size={13} className="shrink-0 text-muted-foreground" />
+                <span className="flex-1 truncate">{doc.title}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{dayjs(doc.updated_at).format('MM-DD')}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {totalTasks === 0 && docs.length === 0 && (
+        <div className="py-8 text-center text-muted-foreground">
+          <BarChart3 size={48} className="mx-auto mb-3 opacity-20" />
+          <p>项目还没有任务和文档</p>
         </div>
       )}
     </div>
