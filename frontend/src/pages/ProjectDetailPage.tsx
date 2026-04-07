@@ -25,11 +25,12 @@ export default function ProjectDetailPage() {
 
   const board = project?.boards?.[boardIdx]
   const { data: tasks = [] } = useQuery({ queryKey: ['tasks', board?.id], queryFn: () => listTasks({ board_id: board!.id }), enabled: !!board })
-  const { data: docs = [] } = useQuery({
+  const { data: docsData } = useQuery({
     queryKey: ['project-docs', id],
-    queryFn: () => listDocuments({ project_id: id!, limit: 200 }),
+    queryFn: () => listDocuments({ project_id: id!, page_size: 100 }),
     enabled: !!id,
   })
+  const docs = docsData?.items ?? []
 
   const createTaskMutation = useMutation({
     mutationFn: createTask,

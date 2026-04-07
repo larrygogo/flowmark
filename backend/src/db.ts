@@ -127,7 +127,31 @@ export function runMigrations() {
     CREATE INDEX IF NOT EXISTS idx_documents_project ON documents(project_id);
     CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
     CREATE INDEX IF NOT EXISTS idx_github_cache_project ON github_cache(project_id);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+      title, content, content=documents, content_rowid=rowid
+    );
+
+    -- Triggers to keep FTS in sync
+    CREATE TRIGGER IF NOT EXISTS documents_ai AFTER INSERT ON documents BEGIN
+      INSERT INTO documents_fts(rowid, title, content) VALUES (NEW.rowid, NEW.title, NEW.content);
+    END;
+    CREATE TRIGGER IF NOT EXISTS documents_ad AFTER DELETE ON documents BEGIN
+      INSERT INTO documents_fts(documents_fts, rowid, title, content) VALUES('delete', OLD.rowid, OLD.title, OLD.content);
+    END;
+    CREATE TRIGGER IF NOT EXISTS documents_au AFTER UPDATE ON documents BEGIN
+      INSERT INTO documents_fts(documents_fts, rowid, title, content) VALUES('delete', OLD.rowid, OLD.title, OLD.content);
+      INSERT INTO documents_fts(documents_fts, rowid, title, content) VALUES (NEW.rowid, NEW.title, NEW.content);
+    END;
   `);
+
+  // Rebuild FTS index to ensure existing documents are indexed
+  const ftsCount = (db.prepare('SELECT COUNT(*) as c FROM documents_fts').get() as any).c;
+  const docCount = (db.prepare('SELECT COUNT(*) as c FROM documents').get() as any).c;
+  if (ftsCount === 0 && docCount > 0) {
+    db.exec("INSERT INTO documents_fts(documents_fts) VALUES('rebuild')");
+    console.log(`FTS index rebuilt for ${docCount} documents`);
+  }
 
   console.log('Database migrations completed');
 }

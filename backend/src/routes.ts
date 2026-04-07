@@ -1,10 +1,11 @@
 import { Router } from 'express';
+import type { Router as RouterType } from 'express';
 import { v4 as uuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
 import { getDb } from './db.js';
 
-export const apiRouter = Router();
+export const apiRouter: RouterType = Router();
 
 const jwtSecret = () => process.env.JWT_SECRET || 'dev-secret';
 
@@ -204,15 +205,64 @@ apiRouter.get('/categories', (_req, res) => {
 // --- Documents ---
 apiRouter.get('/documents', (req, res) => {
   const db = getDb();
-  const { category, status, limit, project_id } = req.query;
-  let sql = 'SELECT d.id, d.title, d.status, d.pinned, c.name as category, d.project_id, p.name as project_name, d.created_at, d.updated_at FROM documents d LEFT JOIN categories c ON d.category_id = c.id LEFT JOIN projects p ON d.project_id = p.id WHERE 1=1';
+  const { category, status, project_id, search, page, page_size, tags: tagsFilter } = req.query;
+  const pageNum = Math.max(1, Number(page) || 1);
+  const size = Math.min(100, Math.max(1, Number(page_size) || 20));
+  const offset = (pageNum - 1) * size;
+
+  let sql: string;
+  let countSql: string;
   const params: any[] = [];
-  if (category) { sql += ' AND c.name = ? COLLATE NOCASE'; params.push(category); }
-  if (project_id) { sql += ' AND d.project_id = ?'; params.push(project_id); }
-  if (status) { sql += ' AND d.status = ?'; params.push(status); }
-  sql += ' ORDER BY d.pinned DESC, d.updated_at DESC LIMIT ?';
-  params.push(Number(limit) || 50);
-  res.json(db.prepare(sql).all(...params));
+  const countParams: any[] = [];
+
+  if (search && String(search).trim()) {
+    const term = String(search).trim();
+    // FTS5 search with snippet for matched content
+    sql = `SELECT d.id, d.title, d.status, d.pinned, d.tags, c.name as category, d.project_id, p.name as project_name, d.created_at, d.updated_at,
+      snippet(documents_fts, 1, '<<', '>>', '...', 32) as match_snippet
+      FROM documents_fts fts
+      JOIN documents d ON d.rowid = fts.rowid
+      LEFT JOIN categories c ON d.category_id = c.id
+      LEFT JOIN projects p ON d.project_id = p.id
+      WHERE documents_fts MATCH ?`;
+    countSql = `SELECT COUNT(*) as c FROM documents_fts fts JOIN documents d ON d.rowid = fts.rowid LEFT JOIN categories c ON d.category_id = c.id WHERE documents_fts MATCH ?`;
+    params.push(term);
+    countParams.push(term);
+  } else {
+    sql = `SELECT d.id, d.title, d.status, d.pinned, d.tags, c.name as category, d.project_id, p.name as project_name, d.created_at, d.updated_at
+      FROM documents d LEFT JOIN categories c ON d.category_id = c.id LEFT JOIN projects p ON d.project_id = p.id WHERE 1=1`;
+    countSql = `SELECT COUNT(*) as c FROM documents d LEFT JOIN categories c ON d.category_id = c.id WHERE 1=1`;
+  }
+
+  if (category) {
+    sql += ' AND c.name = ? COLLATE NOCASE'; params.push(category);
+    countSql += ' AND c.name = ? COLLATE NOCASE'; countParams.push(category);
+  }
+  if (project_id) {
+    sql += ' AND d.project_id = ?'; params.push(project_id);
+    countSql += ' AND d.project_id = ?'; countParams.push(project_id);
+  }
+  if (status) {
+    sql += ' AND d.status = ?'; params.push(status);
+    countSql += ' AND d.status = ?'; countParams.push(status);
+  }
+  if (tagsFilter) {
+    sql += ' AND d.tags LIKE ?'; params.push(`%${tagsFilter}%`);
+    countSql += ' AND d.tags LIKE ?'; countParams.push(`%${tagsFilter}%`);
+  }
+
+  const total = (db.prepare(countSql).get(...countParams) as any).c;
+
+  if (search && String(search).trim()) {
+    sql += ' ORDER BY rank';
+  } else {
+    sql += ' ORDER BY d.pinned DESC, d.updated_at DESC';
+  }
+  sql += ' LIMIT ? OFFSET ?';
+  params.push(size, offset);
+
+  const items = db.prepare(sql).all(...params);
+  res.json({ items, total, page: pageNum, page_size: size });
 });
 
 apiRouter.get('/documents/:id', (req, res) => {

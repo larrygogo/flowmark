@@ -52,8 +52,15 @@ export async function listCategories() {
   return data
 }
 
-export async function listDocuments(params?: { category?: string; project_id?: string; status?: string; limit?: number }) {
-  const { data } = await api.get<(Document & { project_name?: string })[]>('/documents', { params })
+export interface DocumentListResponse {
+  items: (Document & { project_name?: string; match_snippet?: string })[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export async function listDocuments(params?: { category?: string; project_id?: string; status?: string; search?: string; tags?: string; page?: number; page_size?: number }) {
+  const { data } = await api.get<DocumentListResponse>('/documents', { params })
   return data
 }
 
