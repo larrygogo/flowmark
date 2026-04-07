@@ -18,7 +18,7 @@ export default function DocDetailPage() {
   const d = doc as typeof doc & { project_name?: string; project_color?: string }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-3xl">
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
         <button onClick={() => navigate('/docs')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
         <FileText size={18} className="text-muted-foreground" />
