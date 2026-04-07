@@ -58,7 +58,8 @@ apiRouter.get('/auth/me', authMiddleware, (_req, res) => {
   res.json({ authenticated: true });
 });
 
-// All read routes are public (Web is display-only, writes go through MCP)
+// Protected routes (require JWT)
+apiRouter.use(authMiddleware);
 
 // --- Projects ---
 apiRouter.get('/projects', (_req, res) => {
