@@ -24,6 +24,13 @@ export function runMigrations() {
   const db = getDb();
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS auth (
+      id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
