@@ -27,7 +27,6 @@ const staticDir = process.env.STATIC_DIR || path.join(__dirname, '..', '..', 'fr
 app.use(express.static(staticDir, { maxAge: '1h' }));
 app.get('/{*path}', (_req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Clear-Site-Data', '"cache", "storage"');
   res.sendFile(path.join(staticDir, 'index.html'));
 });
 
