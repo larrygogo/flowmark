@@ -93,3 +93,8 @@ const server = app.listen(port, () => {
 });
 server.keepAliveTimeout = 65000;
 server.headersTimeout = 66000;
+
+// Prevent ESM event loop drain
+const _keepAlive = setInterval(() => {}, 1 << 30);
+process.on('SIGTERM', () => { clearInterval(_keepAlive); server.close(); });
+process.on('beforeExit', (code) => { console.log(`beforeExit code=${code}`); });
