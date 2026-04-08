@@ -88,6 +88,8 @@ app.get('/{*path}', (_req, res) => {
 });
 
 const port = Number(process.env.PORT) || 3201;
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`FlowMark listening on http://0.0.0.0:${port}`);
 });
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
