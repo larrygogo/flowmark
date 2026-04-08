@@ -413,6 +413,34 @@ apiRouter.post('/projects/:id/github/sync', async (req, res) => {
   }
 });
 
+// --- API Keys ---
+function hashApiKey(key: string): string {
+  return crypto.createHash('sha256').update(key).digest('hex');
+}
+
+apiRouter.get('/api-keys', (_req, res) => {
+  const rows = getDb().prepare('SELECT id, name, key_prefix, expires_at, last_used_at, created_at FROM api_keys ORDER BY created_at DESC').all();
+  res.json(rows);
+});
+
+apiRouter.post('/api-keys', (req, res) => {
+  const db = getDb();
+  const id = uuid();
+  const { name, expires_at } = req.body;
+  const rawKey = `sk-${crypto.randomBytes(24).toString('hex')}`;
+  const keyHash = hashApiKey(rawKey);
+  const keyPrefix = rawKey.slice(0, 7) + '...' + rawKey.slice(-4);
+  db.prepare('INSERT INTO api_keys (id, name, key_hash, key_prefix, expires_at) VALUES (?,?,?,?,?)')
+    .run(id, name || 'Unnamed', keyHash, keyPrefix, expires_at || null);
+  // Return full key only on creation
+  res.json({ id, name, key: rawKey, key_prefix: keyPrefix, expires_at, created_at: new Date().toISOString() });
+});
+
+apiRouter.delete('/api-keys/:id', (req, res) => {
+  getDb().prepare('DELETE FROM api_keys WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // --- Export ---
 apiRouter.get('/export', (_req, res) => {
   const db = getDb();
@@ -428,6 +456,16 @@ apiRouter.get('/export', (_req, res) => {
   res.setHeader('Content-Disposition', 'attachment; filename="flowmark-export.json"');
   res.json(data);
 });
+
+export function verifyApiKey(key: string): boolean {
+  const db = getDb();
+  const hash = crypto.createHash('sha256').update(key).digest('hex');
+  const row = db.prepare('SELECT id, expires_at FROM api_keys WHERE key_hash = ?').get(hash) as any;
+  if (!row) return false;
+  if (row.expires_at && new Date(row.expires_at) < new Date()) return false;
+  db.prepare("UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?").run(row.id);
+  return true;
+}
 
 function parseGithubUrl(url?: string | null): [string | null, string | null] {
   if (!url) return [null, null];
