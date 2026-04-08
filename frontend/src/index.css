@@ -56,6 +56,12 @@ input, textarea { user-select: text; -webkit-user-select: text; caret-color: aut
 .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
 .animate-slide-left { animation: slide-left 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
 
+@keyframes fade-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-scale { animation: fade-scale 0.25s cubic-bezier(0.25, 0.1, 0.25, 1); }
+
 /* Apple-style transitions */
 * {
   transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);

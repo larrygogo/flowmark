@@ -351,6 +351,15 @@
       "priority": "high",
       "module": "frontend",
       "tags": ["enhancement", "project", "knowledge-base", "ui"]
+    },
+    {
+      "id": "F040",
+      "title": "编辑项目响应式弹层",
+      "description": "编辑项目在移动端使用从右侧滑入的全屏 Sheet，在 PC 端使用居中 Modal，根据屏幕尺寸自适应切换",
+      "status": "done",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "project", "ui", "mobile"]
     }
   ]
 }
