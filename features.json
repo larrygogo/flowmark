@@ -405,6 +405,15 @@
       "priority": "high",
       "module": "frontend",
       "tags": ["enhancement", "project", "knowledge-base", "navigation"]
+    },
+    {
+      "id": "F046",
+      "title": "所见即所得 Markdown 编辑器",
+      "description": "文档编辑从纯文本 textarea 改为所见即所得的 Markdown 编辑器，支持实时预览、工具栏、快捷键",
+      "status": "planned",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "knowledge-base", "ui"]
     }
   ]
 }

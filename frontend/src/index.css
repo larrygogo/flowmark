@@ -201,3 +201,69 @@ input, textarea { user-select: text; -webkit-user-select: text; caret-color: aut
 
 /* highlight.js override */
 .markdown-body .hljs { background: rgba(255,255,255,0.04); }
+
+/* Milkdown editor overrides for dark theme */
+.milkdown-editor {
+  user-select: text;
+  -webkit-user-select: text;
+  caret-color: auto;
+}
+
+.milkdown-editor .milkdown {
+  color: #e6edf3;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.milkdown-editor .ProseMirror {
+  outline: none;
+  min-height: 50dvh;
+}
+
+.milkdown-editor .ProseMirror h1,
+.milkdown-editor .ProseMirror h2,
+.milkdown-editor .ProseMirror h3,
+.milkdown-editor .ProseMirror h4 {
+  color: #f0f6fc;
+  font-weight: 600;
+}
+
+.milkdown-editor .ProseMirror code {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 0.15em 0.4em;
+  font-size: 0.875em;
+  font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.milkdown-editor .ProseMirror pre {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.milkdown-editor .ProseMirror blockquote {
+  border-left: 3px solid #6366f1;
+  padding: 0.25em 1em;
+  color: rgba(255,255,255,0.5);
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 0 8px 8px 0;
+}
+
+.milkdown-editor .ProseMirror a { color: #6366f1; }
+
+.milkdown-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.milkdown-editor .ProseMirror th,
+.milkdown-editor .ProseMirror td {
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.milkdown-editor .ProseMirror th {
+  background: rgba(255,255,255,0.04);
+  font-weight: 600;
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileText, Download, Pencil, Check, X, ArrowLeft } from 'lucide-react'
@@ -9,6 +9,8 @@ import { getDocument, updateDocument } from '../api/projects.ts'
 import { parseTags } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import 'highlight.js/styles/github-dark.min.css'
+
+const MilkdownEditor = lazy(() => import('../components/MilkdownEditor.tsx'))
 
 export default function DocDetailPage() {
   const { id, pid } = useParams()
@@ -114,9 +116,14 @@ export default function DocDetailPage() {
       </div>
 
       {editing ? (
-        <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
-          className="w-full min-h-[60dvh] px-4 py-6 bg-transparent text-foreground text-sm font-mono leading-relaxed resize-none outline-none"
-          placeholder="Markdown 内容..." />
+        <div className="min-h-[60dvh] px-4 py-4">
+          <Suspense fallback={<div className="text-muted-foreground text-sm">加载编辑器...</div>}>
+            <MilkdownEditor
+              defaultValue={editContent}
+              onChange={setEditContent}
+            />
+          </Suspense>
+        </div>
       ) : (
         <div className="markdown-body px-4 py-6">
           <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
