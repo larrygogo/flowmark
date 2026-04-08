@@ -419,8 +419,12 @@ function hashApiKey(key: string): string {
 }
 
 apiRouter.get('/api-keys', (_req, res) => {
-  const rows = getDb().prepare('SELECT id, name, key_prefix, expires_at, last_used_at, created_at FROM api_keys ORDER BY created_at DESC').all();
-  res.json(rows);
+  try {
+    const rows = getDb().prepare('SELECT id, name, key_prefix, expires_at, last_used_at, created_at FROM api_keys ORDER BY created_at DESC').all();
+    res.json(rows);
+  } catch {
+    res.json([]);
+  }
 });
 
 apiRouter.post('/api-keys', (req, res) => {
