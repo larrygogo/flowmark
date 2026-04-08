@@ -62,6 +62,20 @@ apiRouter.get('/auth/me', authMiddleware, (_req, res) => {
 // Protected routes (require JWT)
 apiRouter.use(authMiddleware);
 
+apiRouter.put('/auth/password', (req, res) => {
+  const db = getDb();
+  const { current_password, new_password } = req.body;
+  if (!new_password || new_password.length < 4) return res.status(400).json({ error: 'Password too short' });
+  const row = db.prepare('SELECT password_hash FROM auth WHERE id = 1').get() as any;
+  if (row && current_password && !verifyPassword(current_password, row.password_hash)) {
+    return res.status(401).json({ error: 'Current password incorrect' });
+  }
+  const hash = hashPassword(new_password);
+  db.prepare('UPDATE auth SET password_hash = ?, updated_at = datetime(\'now\') WHERE id = 1').run(hash);
+  const token = jwt.sign({ sub: 'flowmark' }, jwtSecret(), { expiresIn: '30d' });
+  res.json({ token, message: 'Password updated' });
+});
+
 // --- Projects ---
 apiRouter.get('/projects', (_req, res) => {
   const rows = getDb().prepare(`

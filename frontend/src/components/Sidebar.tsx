@@ -3,7 +3,7 @@ import { NavLink, useLocation, useParams, useNavigate, useSearchParams } from 'r
 import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard, FileText, ChevronDown, ChevronRight,
-  PanelLeftClose, PanelLeft, Plus, BarChart3, LayoutList, Archive, KeyRound,
+  PanelLeftClose, PanelLeft, Plus, BarChart3, LayoutList, Archive, Settings,
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { listProjects } from '../api/projects.ts'
@@ -14,7 +14,7 @@ import type { Project } from '../types/index.ts'
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: '总览' },
   { to: '/docs', icon: FileText, label: '知识库' },
-  { to: '/settings/api-keys', icon: KeyRound, label: 'API Keys' },
+  { to: '/settings/api-keys', icon: Settings, label: '设置' },
 ]
 
 export default function Sidebar() {
