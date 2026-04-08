@@ -9,6 +9,7 @@ import ProjectListPage from './pages/ProjectListPage.tsx'
 import ProjectDetailPage from './pages/ProjectDetailPage.tsx'
 import DocsPage from './pages/DocsPage.tsx'
 import DocDetailPage from './pages/DocDetailPage.tsx'
+import ApiKeysPage from './pages/ApiKeysPage.tsx'
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null }
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="docs" element={<DocsPage />} />
           <Route path="docs/:id" element={<DocDetailPage />} />
           <Route path="projects/:pid/docs/:id" element={<DocDetailPage />} />
+          <Route path="settings/api-keys" element={<ApiKeysPage />} />
         </Route>
       </Routes>
       </ErrorBoundary>

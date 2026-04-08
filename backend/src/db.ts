@@ -158,6 +158,18 @@ export function runMigrations() {
     END;
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS api_keys (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      key_hash TEXT NOT NULL,
+      key_prefix TEXT NOT NULL,
+      expires_at TEXT,
+      last_used_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
   // Rebuild FTS index to ensure existing documents are indexed
   const ftsCount = (db.prepare('SELECT COUNT(*) as c FROM documents_fts').get() as any).c;
   const docCount = (db.prepare('SELECT COUNT(*) as c FROM documents').get() as any).c;

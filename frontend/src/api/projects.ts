@@ -113,3 +113,28 @@ export async function updateDocument(id: string, req: { title?: string; content?
   const { data } = await api.put<Document>(`/documents/${id}`, req)
   return data
 }
+
+// --- API Keys ---
+export interface ApiKey {
+  id: string
+  name: string
+  key?: string // only on creation
+  key_prefix: string
+  expires_at: string | null
+  last_used_at: string | null
+  created_at: string
+}
+
+export async function listApiKeys() {
+  const { data } = await api.get<ApiKey[]>('/api-keys')
+  return data
+}
+
+export async function createApiKey(req: { name: string; expires_at?: string | null }) {
+  const { data } = await api.post<ApiKey>('/api-keys', req)
+  return data
+}
+
+export async function deleteApiKey(id: string) {
+  await api.delete(`/api-keys/${id}`)
+}

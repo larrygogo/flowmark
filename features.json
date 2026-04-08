@@ -414,6 +414,15 @@
       "priority": "high",
       "module": "frontend",
       "tags": ["enhancement", "knowledge-base", "ui"]
+    },
+    {
+      "id": "F047",
+      "title": "MCP API Key 管理 + SSE 端点",
+      "description": "支持创建/管理 API Key（可选过期时间、记录最后使用时间），通过 SSE 暴露 MCP 服务供远程 Agent 使用，前端提供 Key 管理页面",
+      "status": "planned",
+      "priority": "high",
+      "module": "both",
+      "tags": ["enhancement", "mcp", "auth"]
     }
   ]
 }
