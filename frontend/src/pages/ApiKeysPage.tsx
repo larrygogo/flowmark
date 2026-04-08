@@ -11,7 +11,8 @@ dayjs.locale('zh-cn')
 
 export default function ApiKeysPage() {
   const qc = useQueryClient()
-  const { data: keys = [], isLoading } = useQuery({ queryKey: ['api-keys'], queryFn: listApiKeys })
+  const { data: rawKeys, isLoading } = useQuery({ queryKey: ['api-keys'], queryFn: listApiKeys })
+  const keys = Array.isArray(rawKeys) ? rawKeys : []
 
   const [showCreate, setShowCreate] = useState(false)
   const [name, setName] = useState('')
