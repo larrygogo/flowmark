@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flowmark-v1';
+const CACHE_NAME = 'flowmark-v2';
 const STATIC_ASSETS = ['/', '/manifest.json', '/favicon.svg', '/icon-192.svg', '/icon-512.svg'];
 
 self.addEventListener('install', (event) => {
@@ -24,16 +24,16 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET and API requests
   if (request.method !== 'GET' || url.pathname.startsWith('/api')) return;
 
-  // Network-first for navigation (HTML), cache-first for assets
+  // Network-first for navigation (HTML), always fallback to cached index.html for SPA
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put('/', clone));
           return response;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match('/'))
     );
   } else {
     event.respondWith(
