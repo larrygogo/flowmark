@@ -263,11 +263,7 @@ apiRouter.get('/documents', (req, res) => {
 
   const total = (db.prepare(countSql).get(...countParams) as any).c;
 
-  if (search && String(search).trim()) {
-    sql += ' ORDER BY rank';
-  } else {
-    sql += ' ORDER BY d.pinned DESC, d.updated_at DESC';
-  }
+  sql += ' ORDER BY d.pinned DESC, d.updated_at DESC';
   sql += ' LIMIT ? OFFSET ?';
   params.push(size, offset);
 
