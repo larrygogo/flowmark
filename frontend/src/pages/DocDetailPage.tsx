@@ -2,9 +2,14 @@ import { useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileText, Download, Pencil, Check, X, ArrowLeft } from 'lucide-react'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 import { getDocument, updateDocument } from '../api/projects.ts'
 import { parseTags } from '../lib/utils.ts'
+import { useIsMobile } from '../hooks/useIsMobile.ts'
 import dayjs from 'dayjs'
+import 'highlight.js/styles/github-dark.min.css'
 
 const MilkdownEditor = lazy(() => import('../components/MilkdownEditor.tsx'))
 
@@ -15,6 +20,7 @@ export default function DocDetailPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const isFromProject = !!pid
+  const isMobile = useIsMobile()
   const { data: doc, isLoading } = useQuery({ queryKey: ['document', id], queryFn: () => getDocument(id!), enabled: !!id })
 
   const [editing, setEditing] = useState(false)
@@ -111,16 +117,32 @@ export default function DocDetailPage() {
         <span>更新于 {dayjs(doc.updated_at).format('YYYY-MM-DD HH:mm')}</span>
       </div>
 
-      <div className="markdown-body px-4 py-6">
-        <Suspense fallback={<div className="text-muted-foreground text-sm">加载中...</div>}>
-          <MilkdownEditor
-            key={editing ? 'edit' : 'view'}
-            defaultValue={editing ? editContent : doc.content}
-            readonly={!editing}
-            onChange={editing ? setEditContent : undefined}
-          />
-        </Suspense>
-      </div>
+      {isMobile ? (
+        // Mobile: textarea for editing, react-markdown for preview
+        editing ? (
+          <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
+            className="w-full min-h-[60dvh] px-4 py-6 bg-transparent text-foreground text-sm font-mono leading-relaxed resize-none outline-none"
+            placeholder="Markdown 内容..." autoFocus />
+        ) : (
+          <div className="markdown-body px-4 py-6">
+            <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+              {doc.content}
+            </Markdown>
+          </div>
+        )
+      ) : (
+        // Desktop: Milkdown WYSIWYG
+        <div className="markdown-body px-4 py-6">
+          <Suspense fallback={<div className="text-muted-foreground text-sm">加载中...</div>}>
+            <MilkdownEditor
+              key={editing ? 'edit' : 'view'}
+              defaultValue={editing ? editContent : doc.content}
+              readonly={!editing}
+              onChange={editing ? setEditContent : undefined}
+            />
+          </Suspense>
+        </div>
+      )}
     </div>
   )
 }
