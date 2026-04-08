@@ -1,10 +1,16 @@
 #!/bin/bash
-set -euo pipefail
 
-# Load environment for non-interactive SSH sessions
-export PATH="$HOME/.local/share/pnpm:$HOME/.nvm/versions/node/$(ls $HOME/.nvm/versions/node/ 2>/dev/null | tail -1)/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
+# Load full user environment for non-interactive SSH sessions
+[ -f "$HOME/.bashrc" ] && source "$HOME/.bashrc"
+[ -f "$HOME/.profile" ] && source "$HOME/.profile"
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+# Common pnpm locations
+for p in "$HOME/.local/share/pnpm" "$HOME/.corepack/bin" "$HOME/.local/bin"; do
+  [ -d "$p" ] && export PATH="$p:$PATH"
+done
+
+set -euo pipefail
 
 REPO_DIR="/home/ubuntu/repos/flowmark"
 DEPLOY_DIR="/home/ubuntu/flowmark"
