@@ -428,16 +428,19 @@ apiRouter.get('/api-keys', (_req, res) => {
 });
 
 apiRouter.post('/api-keys', (req, res) => {
-  const db = getDb();
-  const id = uuid();
-  const { name, expires_at } = req.body;
-  const rawKey = `sk-${crypto.randomBytes(24).toString('hex')}`;
-  const keyHash = hashApiKey(rawKey);
-  const keyPrefix = rawKey.slice(0, 7) + '...' + rawKey.slice(-4);
-  db.prepare('INSERT INTO api_keys (id, name, key_hash, key_prefix, expires_at) VALUES (?,?,?,?,?)')
-    .run(id, name || 'Unnamed', keyHash, keyPrefix, expires_at || null);
-  // Return full key only on creation
-  res.json({ id, name, key: rawKey, key_prefix: keyPrefix, expires_at, created_at: new Date().toISOString() });
+  try {
+    const db = getDb();
+    const id = uuid();
+    const { name, expires_at } = req.body;
+    const rawKey = `sk-${crypto.randomBytes(24).toString('hex')}`;
+    const keyHash = hashApiKey(rawKey);
+    const keyPrefix = rawKey.slice(0, 7) + '...' + rawKey.slice(-4);
+    db.prepare('INSERT INTO api_keys (id, name, key_hash, key_prefix, expires_at) VALUES (?,?,?,?,?)')
+      .run(id, name || 'Unnamed', keyHash, keyPrefix, expires_at || null);
+    res.json({ id, name, key: rawKey, key_prefix: keyPrefix, expires_at, created_at: new Date().toISOString() });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 apiRouter.delete('/api-keys/:id', (req, res) => {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Key, Plus, Trash2, Copy, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import { listApiKeys, createApiKey, deleteApiKey, type ApiKey } from '../api/projects.ts'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -29,6 +30,7 @@ export default function ApiKeysPage() {
       setName('')
       setExpiresIn('never')
     },
+    onError: (err) => toast.error(`创建失败: ${err.message}`),
   })
 
   const deleteMutation = useMutation({
