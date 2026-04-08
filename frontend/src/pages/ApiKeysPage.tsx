@@ -1,14 +1,60 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Key, Plus, Trash2, Copy, Check } from 'lucide-react'
+import { Key, Plus, Trash2, Copy, Check, Lock } from 'lucide-react'
 import { toast } from 'sonner'
-import { listApiKeys, createApiKey, deleteApiKey, type ApiKey } from '../api/projects.ts'
+import { listApiKeys, createApiKey, deleteApiKey, changePassword, type ApiKey } from '../api/projects.ts'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
+
+function ChangePasswordSection() {
+  const [currentPwd, setCurrentPwd] = useState('')
+  const [newPwd, setNewPwd] = useState('')
+  const [confirmPwd, setConfirmPwd] = useState('')
+
+  const mutation = useMutation({
+    mutationFn: changePassword,
+    onSuccess: (data) => {
+      localStorage.setItem('flowmark-token', data.token)
+      toast.success('密码已修改')
+      setCurrentPwd('')
+      setNewPwd('')
+      setConfirmPwd('')
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error || '修改失败'),
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (newPwd.length < 4) return toast.error('新密码至少 4 位')
+    if (newPwd !== confirmPwd) return toast.error('两次密码不一致')
+    mutation.mutate({ current_password: currentPwd, new_password: newPwd })
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Lock size={16} className="text-muted-foreground" />
+        <h2 className="text-sm font-medium">修改密码</h2>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input type="password" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} placeholder="当前密码"
+          className="w-full rounded-xl border border-border bg-muted/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder="新密码"
+          className="w-full rounded-xl border border-border bg-muted/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} placeholder="确认新密码"
+          className="w-full rounded-xl border border-border bg-muted/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        <button type="submit" disabled={mutation.isPending}
+          className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          {mutation.isPending ? '修改中...' : '修改密码'}
+        </button>
+      </form>
+    </div>
+  )
+}
 
 export default function ApiKeysPage() {
   const qc = useQueryClient()
@@ -59,8 +105,14 @@ export default function ApiKeysPage() {
 
   return (
     <div className="mx-auto max-w-2xl p-4 md:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold tracking-tight">API Keys</h1>
+      <h1 className="text-xl font-semibold tracking-tight mb-4">设置</h1>
+
+      {/* Change Password */}
+      <ChangePasswordSection />
+
+      {/* API Keys */}
+      <div className="flex items-center justify-between mt-6 mb-4">
+        <h2 className="text-lg font-semibold tracking-tight">API Keys</h2>
         <button onClick={() => { setShowCreate(true); setNewKey(null) }}
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground">
           <Plus size={14} /> 创建

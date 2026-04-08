@@ -114,6 +114,12 @@ export async function updateDocument(id: string, req: { title?: string; content?
   return data
 }
 
+// --- Auth ---
+export async function changePassword(req: { current_password?: string; new_password: string }) {
+  const { data } = await api.put<{ token: string }>('/auth/password', req)
+  return data
+}
+
 // --- API Keys ---
 export interface ApiKey {
   id: string
