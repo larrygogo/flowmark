@@ -44,6 +44,25 @@ input, textarea { user-select: text; -webkit-user-select: text; caret-color: aut
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Sidebar glass */
+.sidebar-glass {
+  background: rgba(20, 20, 22, 0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Sidebar active indicator */
+.sidebar-active {
+  box-shadow: inset 2px 0 0 var(--color-primary);
+}
+
+/* Sidebar slide-in animation */
+@keyframes sidebar-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-sidebar-in { animation: sidebar-in 0.25s cubic-bezier(0.25, 0.1, 0.25, 1); }
+
 /* Drawer animations */
 @keyframes slide-up {
   from { transform: translateY(100%); }

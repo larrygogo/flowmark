@@ -14,10 +14,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">FlowMark</h1>
-        <p className="text-sm text-muted-foreground">{dayjs().format('YYYY-MM-DD dddd')}</p>
-      </div>
+      <p className="text-sm text-muted-foreground">{dayjs().format('YYYY-MM-DD dddd')}</p>
 
       {/* Stats */}
       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">

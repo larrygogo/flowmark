@@ -47,6 +47,7 @@ export interface Task {
   progress: number
   labels: string[] | string
   due_date: string | null
+  acceptance_criteria: string
   position: number
   created_at: string
   updated_at: string
@@ -59,6 +60,16 @@ export interface Category {
   doc_count: number
 }
 
+export interface Folder {
+  id: string
+  project_id: string
+  parent_id: string | null
+  name: string
+  position: number
+  created_at: string
+  updated_at: string
+}
+
 export interface Document {
   id: string
   category_id: string | null
@@ -67,6 +78,7 @@ export interface Document {
   content: string
   tags: string[] | string
   status: 'draft' | 'published' | 'to_verify' | 'archived'
+  folder_id: string | null
   pinned: boolean
   category: string | null
   created_at: string

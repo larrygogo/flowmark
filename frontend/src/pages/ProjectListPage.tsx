@@ -46,9 +46,8 @@ export default function ProjectListPage() {
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">项目</h1>
         <button onClick={() => { setShowForm(true); setEditingProject(null) }}
-          className="flex items-center gap-1 rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+          className="flex items-center gap-1 rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground ml-auto">
           <Plus size={16} /> 新建
         </button>
       </div>

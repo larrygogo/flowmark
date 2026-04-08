@@ -82,6 +82,19 @@ export function runMigrations() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS folders (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      parent_id TEXT REFERENCES folders(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      position INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_folders_project ON folders(project_id);
+    CREATE INDEX IF NOT EXISTS idx_folders_parent ON folders(parent_id);
+
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
@@ -151,6 +164,21 @@ export function runMigrations() {
   if (ftsCount === 0 && docCount > 0) {
     db.exec("INSERT INTO documents_fts(documents_fts) VALUES('rebuild')");
     console.log(`FTS index rebuilt for ${docCount} documents`);
+  }
+
+  // Add folder_id column to documents if not exists
+  const docCols = db.prepare("PRAGMA table_info(documents)").all() as any[];
+  if (!docCols.find((c: any) => c.name === 'folder_id')) {
+    db.exec("ALTER TABLE documents ADD COLUMN folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_documents_folder ON documents(folder_id)");
+    console.log('Added folder_id column to documents');
+  }
+
+  // Add acceptance_criteria column to tasks if not exists
+  const taskCols = db.prepare("PRAGMA table_info(tasks)").all() as any[];
+  if (!taskCols.find((c: any) => c.name === 'acceptance_criteria')) {
+    db.exec("ALTER TABLE tasks ADD COLUMN acceptance_criteria TEXT NOT NULL DEFAULT ''");
+    console.log('Added acceptance_criteria column to tasks');
   }
 
   console.log('Database migrations completed');
