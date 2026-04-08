@@ -1,33 +1,35 @@
 #!/bin/bash
 
 # Load nvm (skip .bashrc interactive guard)
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+export NVM_DIR="${HOME}/.nvm"
+if [ -s "${NVM_DIR}/nvm.sh" ]; then
+  . "${NVM_DIR}/nvm.sh"
+fi
 
-# Find pnpm/node by searching common install locations
-for p in \
-  "$HOME/.local/share/pnpm" \
-  "$HOME/.corepack/bin" \
-  "$HOME/.local/bin" \
-  "$HOME/.npm-global/bin" \
-  "$HOME/n/bin" \
-  "/usr/local/bin" \
-  "$HOME/.nvm/versions/node"/*/bin
-do
-  [ -d "$p" ] && export PATH="$p:$PATH"
+# Add common tool locations to PATH
+EXTRA_PATHS="${HOME}/.local/share/pnpm:${HOME}/.corepack/bin:${HOME}/.local/bin:${HOME}/.npm-global/bin:/usr/local/bin"
+# Add nvm node bin if exists
+for d in "${HOME}"/.nvm/versions/node/*/bin; do
+  [ -d "$d" ] && EXTRA_PATHS="${d}:${EXTRA_PATHS}"
 done
+export PATH="${EXTRA_PATHS}:${PATH}"
 
-# Also try to find pnpm anywhere under HOME as fallback
-if ! command -v pnpm &>/dev/null; then
-  PNPM_BIN=$(find "$HOME" -name pnpm -type f -executable 2>/dev/null | head -1)
-  if [ -n "$PNPM_BIN" ]; then
-    export PATH="$(dirname "$PNPM_BIN"):$PATH"
+# Fallback: find pnpm anywhere under HOME
+if ! command -v pnpm >/dev/null 2>&1; then
+  PNPM_BIN="$(find "${HOME}" -name pnpm -type f 2>/dev/null | head -1 || true)"
+  if [ -n "${PNPM_BIN}" ]; then
+    export PATH="$(dirname "${PNPM_BIN}"):${PATH}"
   fi
 fi
 
-echo "DEBUG: PATH=$PATH"
-echo "DEBUG: node=$(command -v node 2>/dev/null || echo 'not found')"
-echo "DEBUG: pnpm=$(command -v pnpm 2>/dev/null || echo 'not found')"
+echo "DEBUG: node=$(command -v node 2>/dev/null || echo NOT_FOUND)"
+echo "DEBUG: pnpm=$(command -v pnpm 2>/dev/null || echo NOT_FOUND)"
+
+# Fail if pnpm still not found
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "ERROR: pnpm not found. Install it: npm install -g pnpm"
+  exit 1
+fi
 
 set -euo pipefail
 
