@@ -16,15 +16,22 @@ if [ -s "${NVM_DIR}/nvm.sh" ]; then
   . "${NVM_DIR}/nvm.sh"
 fi
 
-# 3) Common bin directories
-export PATH="${HOME}/.local/bin:${HOME}/.local/share/pnpm:/usr/local/bin:${PATH}"
+# 3) Common bin directories + npm global prefix
+NPM_GLOBAL="$(npm config get prefix 2>/dev/null)/bin"
+export PATH="${HOME}/.local/bin:${HOME}/.local/share/pnpm:${NPM_GLOBAL}:/usr/local/bin:${PATH}"
 
 # Verify
 echo "node: $(command -v node 2>/dev/null || echo NOT_FOUND) ($(node --version 2>/dev/null || echo -))"
 echo "pnpm: $(command -v pnpm 2>/dev/null || echo NOT_FOUND) ($(pnpm --version 2>/dev/null || echo -))"
 
 if ! command -v pnpm >/dev/null 2>&1; then
-  echo "ERROR: pnpm not found. Please install: npm install -g pnpm"
+  echo "pnpm not in PATH, installing via corepack..."
+  corepack enable 2>/dev/null && corepack prepare pnpm@latest --activate 2>/dev/null
+fi
+
+# Final check
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "ERROR: pnpm not found. Install: npm install -g pnpm"
   exit 1
 fi
 
