@@ -1,14 +1,33 @@
 #!/bin/bash
 
-# Load full user environment for non-interactive SSH sessions
-[ -f "$HOME/.bashrc" ] && source "$HOME/.bashrc"
-[ -f "$HOME/.profile" ] && source "$HOME/.profile"
+# Load nvm (skip .bashrc interactive guard)
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
-# Common pnpm locations
-for p in "$HOME/.local/share/pnpm" "$HOME/.corepack/bin" "$HOME/.local/bin"; do
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+# Find pnpm/node by searching common install locations
+for p in \
+  "$HOME/.local/share/pnpm" \
+  "$HOME/.corepack/bin" \
+  "$HOME/.local/bin" \
+  "$HOME/.npm-global/bin" \
+  "$HOME/n/bin" \
+  "/usr/local/bin" \
+  "$HOME/.nvm/versions/node"/*/bin
+do
   [ -d "$p" ] && export PATH="$p:$PATH"
 done
+
+# Also try to find pnpm anywhere under HOME as fallback
+if ! command -v pnpm &>/dev/null; then
+  PNPM_BIN=$(find "$HOME" -name pnpm -type f -executable 2>/dev/null | head -1)
+  if [ -n "$PNPM_BIN" ]; then
+    export PATH="$(dirname "$PNPM_BIN"):$PATH"
+  fi
+fi
+
+echo "DEBUG: PATH=$PATH"
+echo "DEBUG: node=$(command -v node 2>/dev/null || echo 'not found')"
+echo "DEBUG: pnpm=$(command -v pnpm 2>/dev/null || echo 'not found')"
 
 set -euo pipefail
 
