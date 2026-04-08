@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Calendar, GitBranch, AlertTriangle, Search, LayoutList, FileText, Plus, BarChart3, CheckCircle2, Circle, Clock, Pencil } from 'lucide-react'
+import { Calendar, GitBranch, AlertTriangle, Search, FileText, Plus, BarChart3, CheckCircle2, Circle, Clock, Pencil } from 'lucide-react'
 import { getProject, listTasks, listDocuments, createTask, updateProject, type ProjectDetail, type BoardWithColumns } from '../api/projects.ts'
 import Drawer from '../components/Drawer.tsx'
+import TaskDetailDrawer from '../components/TaskDetailDrawer.tsx'
+import ProjectFiles from '../components/ProjectFiles.tsx'
 import { cn, parseTags } from '../lib/utils.ts'
 import dayjs from 'dayjs'
 import type { Task, Column, Document } from '../types/index.ts'
@@ -15,19 +17,23 @@ const priorityColors: Record<string, string> = {
 export default function ProjectDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { data: project, isLoading } = useQuery({ queryKey: ['project', id], queryFn: () => getProject(id!), enabled: !!id })
-  const [viewTab, setViewTab] = useState<'overview' | 'board' | 'docs'>('overview')
+  const viewTab = (searchParams.get('view') || 'overview') as 'overview' | 'board' | 'docs'
   const [boardIdx, setBoardIdx] = useState(0)
   const [taskSearch, setTaskSearch] = useState('')
   const [taskPriority, setTaskPriority] = useState('')
   const [addingInColumn, setAddingInColumn] = useState<string | null>(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [showEditDrawer, setShowEditDrawer] = useState(false)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [editName, setEditName] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [editGithub, setEditGithub] = useState('')
   const [editColor, setEditColor] = useState('')
   const [editGroup, setEditGroup] = useState('')
+  const [editTags, setEditTags] = useState<string[]>([])
+  const [newTagInput, setNewTagInput] = useState('')
   const qc = useQueryClient()
 
   const board = project?.boards?.[boardIdx]
@@ -56,6 +62,8 @@ export default function ProjectDetailPage() {
     setEditGithub(project.github_url || '')
     setEditColor(project.color)
     setEditGroup(project.group_name)
+    setEditTags(parseTags(project.tags))
+    setNewTagInput('')
     setShowEditDrawer(true)
   }
 
@@ -75,52 +83,30 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       {/* Header */}
-      <div className="border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/projects')} className="text-muted-foreground"><ArrowLeft size={20} /></button>
-          <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
-          <h1 className="min-w-0 flex-1 truncate font-bold">{project.name}</h1>
-          <button onClick={openEditDrawer} className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="编辑项目">
-            <Pencil size={18} />
-          </button>
-        </div>
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+        <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
+        <h1 className="min-w-0 flex-1 truncate font-bold">{project.name}</h1>
         {(project.group_name || parseTags(project.tags).length > 0) && (
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground ml-8">
+          <div className="hidden md:flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {project.group_name && <span className="rounded-full bg-muted px-2 py-0.5">{project.group_name}</span>}
             {parseTags(project.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
           </div>
         )}
-      </div>
-
-      {/* View tabs */}
-      <div className="flex items-center gap-1 border-b border-border px-4 py-2">
-        <button onClick={() => setViewTab('overview')}
-          className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm', viewTab === 'overview' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
-          <BarChart3 size={14} /> 概览
-        </button>
-        <button onClick={() => setViewTab('board')}
-          className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm', viewTab === 'board' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
-          <LayoutList size={14} /> 看板
-        </button>
-        <button onClick={() => setViewTab('docs')}
-          className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm', viewTab === 'docs' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
-          <FileText size={14} /> 文档 ({docs.length})
-        </button>
-
-        {/* Board sub-tabs */}
         {viewTab === 'board' && boards.length > 1 && (
-          <>
-            <div className="mx-2 h-4 w-px bg-border" />
+          <div className="hidden md:flex items-center gap-1">
             {boards.map((b, i) => (
               <button key={b.id} onClick={() => setBoardIdx(i)}
                 className={cn('shrink-0 rounded-md px-2 py-1 text-xs', i === boardIdx ? 'bg-muted text-foreground' : 'text-muted-foreground')}>
                 {b.name}
               </button>
             ))}
-          </>
+          </div>
         )}
+        <button onClick={openEditDrawer} className="shrink-0 p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="编辑项目">
+          <Pencil size={18} />
+        </button>
       </div>
 
       {/* Overview */}
@@ -170,7 +156,7 @@ export default function ProjectDetailPage() {
                             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                         </form>
                       )}
-                      {colTasks.map((task) => <TaskItem key={task.id} task={task} />)}
+                      {colTasks.map((task) => <TaskItem key={task.id} task={task} onClick={() => setSelectedTask(task)} />)}
                       {colTasks.length === 0 && addingInColumn !== col.id && (
                         <div className="flex items-center justify-center h-16 text-xs text-muted-foreground opacity-40">空</div>
                       )}
@@ -183,40 +169,24 @@ export default function ProjectDetailPage() {
         </>
       )}
 
-      {/* Documents view */}
+      {/* Files view */}
       {viewTab === 'docs' && (
-        <div className="p-4">
-          {docs.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">
-              <FileText size={48} className="mx-auto mb-3 opacity-20" />
-              <p>此项目暂无关联文档</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {docs.map((doc: Document & { project_name?: string }) => (
-                <button key={doc.id} onClick={() => navigate(`/docs/${doc.id}?from=project&pid=${id}`)}
-                  className="rounded-xl border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
-                  <div className="flex items-start gap-2">
-                    <FileText size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate">{doc.title}</div>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                        {doc.category && <span className="rounded-full bg-muted px-2 py-0.5">{doc.category}</span>}
-                        {parseTags(doc.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
-                        <span>{dayjs(doc.updated_at).format('YYYY-MM-DD')}</span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ProjectFiles projectId={id!} />
+      )}
+
+      {/* Task detail drawer */}
+      {selectedTask && (
+        <TaskDetailDrawer
+          task={selectedTask}
+          boardId={board?.id}
+          open={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
       )}
 
       {/* Edit project drawer */}
       <Drawer open={showEditDrawer} onClose={() => setShowEditDrawer(false)} title="编辑项目">
-        <form onSubmit={(e) => { e.preventDefault(); updateProjectMutation.mutate({ name: editName.trim(), description: editDesc.trim(), github_url: editGithub.trim() || undefined, color: editColor, group_name: editGroup }) }} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); updateProjectMutation.mutate({ name: editName.trim(), description: editDesc.trim(), github_url: editGithub.trim() || undefined, color: editColor, group_name: editGroup, tags: editTags }) }} className="space-y-4">
           <input type="text" placeholder="项目名称" value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus
             className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           <input type="text" placeholder="描述（可选）" value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
@@ -225,6 +195,24 @@ export default function ProjectDetailPage() {
             className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           <input type="text" placeholder="分组" value={editGroup} onChange={(e) => setEditGroup(e.target.value)}
             className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          {/* 标签 */}
+          <div>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {editTags.map(t => (
+                <button key={t} type="button" onClick={() => setEditTags(editTags.filter(x => x !== t))}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs">
+                  {t} <span>×</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input type="text" placeholder="添加标签..." value={newTagInput} onChange={(e) => setNewTagInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (newTagInput.trim() && !editTags.includes(newTagInput.trim())) { setEditTags([...editTags, newTagInput.trim()]); setNewTagInput('') } } }}
+                className="flex-1 rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <button type="button" onClick={() => { if (newTagInput.trim() && !editTags.includes(newTagInput.trim())) { setEditTags([...editTags, newTagInput.trim()]); setNewTagInput('') } }}
+                className="shrink-0 rounded-xl bg-muted px-3 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">添加</button>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">项目颜色</span>
             <input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)}
@@ -390,11 +378,11 @@ function isOverdue(dueDate: string | null): boolean {
   return new Date(dueDate) < new Date(new Date().toISOString().split('T')[0])
 }
 
-function TaskItem({ task }: { task: Task }) {
+function TaskItem({ task, onClick }: { task: Task; onClick?: () => void }) {
   const labels: string[] = (() => { try { return typeof task.labels === 'string' ? JSON.parse(task.labels) : task.labels } catch { return [] } })()
 
   return (
-    <div className={cn('rounded-xl border bg-background p-3', isOverdue(task.due_date) ? 'border-destructive/40' : 'border-border')}>
+    <div onClick={onClick} className={cn('rounded-xl border bg-background p-3 cursor-pointer hover:bg-accent/30 transition-colors', isOverdue(task.due_date) ? 'border-destructive/40' : 'border-border')}>
       <div className="flex items-start gap-2">
         {task.priority !== 'none' && <div className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', priorityColors[task.priority])} />}
         <div className="min-w-0 flex-1">

@@ -158,13 +158,13 @@ apiRouter.get('/tasks', (req, res) => {
 apiRouter.post('/tasks', (req, res) => {
   const db = getDb();
   const id = uuid();
-  const { column_id, title, description, priority, labels, due_date, parent_task_id } = req.body;
+  const { column_id, title, description, priority, labels, due_date, parent_task_id, acceptance_criteria } = req.body;
   const maxPos = db.prepare('SELECT MAX(position) as m FROM tasks WHERE column_id = ?').get(column_id) as any;
   const position = (maxPos?.m ?? -1) + 1;
 
   db.prepare(
-    'INSERT INTO tasks (id, column_id, parent_task_id, title, description, priority, labels, due_date, position) VALUES (?,?,?,?,?,?,?,?,?)'
-  ).run(id, column_id, parent_task_id || null, title, description || '', priority || 'medium', JSON.stringify(labels || []), due_date || null, position);
+    'INSERT INTO tasks (id, column_id, parent_task_id, title, description, priority, labels, due_date, acceptance_criteria, position) VALUES (?,?,?,?,?,?,?,?,?,?)'
+  ).run(id, column_id, parent_task_id || null, title, description || '', priority || 'medium', JSON.stringify(labels || []), due_date || null, acceptance_criteria || '', position);
 
   res.json(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id));
 });
@@ -181,13 +181,14 @@ apiRouter.put('/tasks/:id', (req, res) => {
   const db = getDb();
   const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id) as any;
   if (!existing) return res.status(404).json({ error: 'Not found' });
-  const { title, description, priority, progress, labels, due_date, column_id } = req.body;
+  const { title, description, priority, progress, labels, due_date, column_id, acceptance_criteria } = req.body;
   db.prepare(
-    'UPDATE tasks SET title=?, description=?, priority=?, progress=?, labels=?, due_date=?, column_id=?, updated_at=datetime(\'now\') WHERE id=?'
+    'UPDATE tasks SET title=?, description=?, priority=?, progress=?, labels=?, due_date=?, column_id=?, acceptance_criteria=?, updated_at=datetime(\'now\') WHERE id=?'
   ).run(
     title ?? existing.title, description ?? existing.description, priority ?? existing.priority,
     progress ?? existing.progress, labels ? JSON.stringify(labels) : existing.labels,
-    due_date !== undefined ? due_date : existing.due_date, column_id ?? existing.column_id, req.params.id
+    due_date !== undefined ? due_date : existing.due_date, column_id ?? existing.column_id,
+    acceptance_criteria ?? existing.acceptance_criteria, req.params.id
   );
   res.json(db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id));
 });
@@ -215,10 +216,51 @@ apiRouter.get('/categories', (_req, res) => {
   `).all());
 });
 
+// --- Folders ---
+apiRouter.get('/projects/:id/folders', (req, res) => {
+  const folders = getDb().prepare('SELECT * FROM folders WHERE project_id = ? ORDER BY position, name').all(req.params.id);
+  res.json(folders);
+});
+
+apiRouter.post('/projects/:id/folders', (req, res) => {
+  const db = getDb();
+  const id = uuid();
+  const { name, parent_id } = req.body;
+  const maxPos = db.prepare('SELECT MAX(position) as m FROM folders WHERE project_id = ? AND parent_id IS ?').get(req.params.id, parent_id || null) as any;
+  db.prepare('INSERT INTO folders (id, project_id, parent_id, name, position) VALUES (?,?,?,?,?)').run(id, req.params.id, parent_id || null, name, (maxPos?.m ?? -1) + 1);
+  res.json(db.prepare('SELECT * FROM folders WHERE id = ?').get(id));
+});
+
+apiRouter.put('/folders/:id', (req, res) => {
+  const db = getDb();
+  const existing = db.prepare('SELECT * FROM folders WHERE id = ?').get(req.params.id) as any;
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  const { name, parent_id } = req.body;
+  db.prepare("UPDATE folders SET name=?, parent_id=?, updated_at=datetime('now') WHERE id=?").run(
+    name ?? existing.name, parent_id !== undefined ? parent_id : existing.parent_id, req.params.id
+  );
+  res.json(db.prepare('SELECT * FROM folders WHERE id = ?').get(req.params.id));
+});
+
+apiRouter.delete('/folders/:id', (req, res) => {
+  getDb().prepare('DELETE FROM folders WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// --- Categories ---
+apiRouter.post('/categories', (req, res) => {
+  const db = getDb();
+  const id = uuid();
+  const { name, description } = req.body;
+  const maxPos = db.prepare('SELECT MAX(position) as m FROM categories').get() as any;
+  db.prepare('INSERT INTO categories (id, name, description, position) VALUES (?,?,?,?)').run(id, name, description || '', (maxPos?.m ?? -1) + 1);
+  res.json(db.prepare('SELECT * FROM categories WHERE id = ?').get(id));
+});
+
 // --- Documents ---
 apiRouter.get('/documents', (req, res) => {
   const db = getDb();
-  const { category, status, project_id, search, page, page_size, tags: tagsFilter } = req.query;
+  const { category, status, project_id, folder_id, search, page, page_size, tags: tagsFilter } = req.query;
   const pageNum = Math.max(1, Number(page) || 1);
   const size = Math.min(100, Math.max(1, Number(page_size) || 20));
   const offset = (pageNum - 1) * size;
@@ -252,6 +294,14 @@ apiRouter.get('/documents', (req, res) => {
     sql += ' AND d.project_id = ?'; params.push(project_id);
     countSql += ' AND d.project_id = ?'; countParams.push(project_id);
   }
+  if (folder_id !== undefined) {
+    if (folder_id === 'null' || folder_id === '') {
+      sql += ' AND d.folder_id IS NULL'; countSql += ' AND d.folder_id IS NULL';
+    } else {
+      sql += ' AND d.folder_id = ?'; params.push(folder_id as string);
+      countSql += ' AND d.folder_id = ?'; countParams.push(folder_id as string);
+    }
+  }
   if (status) {
     sql += ' AND d.status = ?'; params.push(status);
     countSql += ' AND d.status = ?'; countParams.push(status);
@@ -271,6 +321,17 @@ apiRouter.get('/documents', (req, res) => {
   res.json({ items, total, page: pageNum, page_size: size });
 });
 
+apiRouter.post('/documents', (req, res) => {
+  const db = getDb();
+  const id = uuid();
+  const { title, content, category_id, project_id, folder_id, tags, status } = req.body;
+  db.prepare(
+    'INSERT INTO documents (id, title, content, category_id, project_id, folder_id, tags, status) VALUES (?,?,?,?,?,?,?,?)'
+  ).run(id, title, content || '', category_id || null, project_id || null, folder_id || null, JSON.stringify(tags || []), status || 'draft');
+  const doc = db.prepare('SELECT d.*, c.name as category, p.name as project_name, p.color as project_color FROM documents d LEFT JOIN categories c ON d.category_id = c.id LEFT JOIN projects p ON d.project_id = p.id WHERE d.id = ?').get(id);
+  res.json(doc);
+});
+
 apiRouter.get('/documents/:id', (req, res) => {
   const doc = getDb().prepare('SELECT d.*, c.name as category, p.name as project_name, p.color as project_color FROM documents d LEFT JOIN categories c ON d.category_id = c.id LEFT JOIN projects p ON d.project_id = p.id WHERE d.id = ?').get(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Not found' });
@@ -281,14 +342,15 @@ apiRouter.put('/documents/:id', (req, res) => {
   const db = getDb();
   const existing = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id) as any;
   if (!existing) return res.status(404).json({ error: 'Not found' });
-  const { title, content, tags, status } = req.body;
+  const { title, content, tags, status, folder_id } = req.body;
   db.prepare(
-    "UPDATE documents SET title=?, content=?, tags=?, status=?, updated_at=datetime('now') WHERE id=?"
+    "UPDATE documents SET title=?, content=?, tags=?, status=?, folder_id=?, updated_at=datetime('now') WHERE id=?"
   ).run(
     title ?? existing.title,
     content ?? existing.content,
     tags ? JSON.stringify(tags) : existing.tags,
     status ?? existing.status,
+    folder_id !== undefined ? folder_id : existing.folder_id,
     req.params.id
   );
   // Keep FTS in sync (triggers handle this automatically)

@@ -53,10 +53,8 @@ export default function DocsPage() {
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
-      <h1 className="text-xl font-semibold tracking-tight">知识库</h1>
-
       {/* Search */}
-      <div className="mt-3 relative">
+      <div className="relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input type="text" value={search}
           onChange={(e) => setSearch(e.target.value)}
