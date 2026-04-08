@@ -171,7 +171,7 @@ export default function ProjectDetailPage() {
 
       {/* Files view */}
       {viewTab === 'docs' && (
-        <ProjectFiles projectId={id!} />
+        <ProjectFiles projectId={id!} initialFolderId={searchParams.get('folder')} />
       )}
 
       {/* Task detail drawer */}

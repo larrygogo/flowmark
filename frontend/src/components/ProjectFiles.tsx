@@ -1,17 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { Folder as FolderIcon, FileText, Plus, ChevronRight, ArrowLeft, Pencil, Trash2, FolderPlus, FilePlus, MoveRight } from 'lucide-react'
 import { listFolders, createFolder, updateFolder, deleteFolder, listDocuments, createDocument, updateDocument } from '../api/projects.ts'
 import { parseTags } from '../lib/utils.ts'
+import { toast } from 'sonner'
 import dayjs from 'dayjs'
 import type { Folder, Document } from '../types/index.ts'
 
-export default function ProjectFiles({ projectId }: { projectId: string }) {
+export default function ProjectFiles({ projectId, initialFolderId }: { projectId: string; initialFolderId?: string | null }) {
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId ?? null)
   const [folderPath, setFolderPath] = useState<{ id: string | null; name: string }[]>([{ id: null, name: '根目录' }])
+  const [pathInitialized, setPathInitialized] = useState(!initialFolderId)
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [showNewFile, setShowNewFile] = useState(false)
@@ -35,8 +37,38 @@ export default function ProjectFiles({ projectId }: { projectId: string }) {
     }),
   })
 
+  // Fetch all docs in project to count files per folder
+  const { data: allDocsData } = useQuery({
+    queryKey: ['project-all-docs', projectId],
+    queryFn: () => listDocuments({ project_id: projectId, page_size: 1000 }),
+  })
+
+  // Build folder path from initialFolderId once folders are loaded
+  useEffect(() => {
+    if (pathInitialized || allFolders.length === 0 || !initialFolderId) return
+    const path: { id: string | null; name: string }[] = [{ id: null, name: '根目录' }]
+    let fid: string | null = initialFolderId
+    const chain: Folder[] = []
+    while (fid) {
+      const f = allFolders.find((fo: Folder) => fo.id === fid)
+      if (!f) break
+      chain.unshift(f)
+      fid = f.parent_id
+    }
+    for (const f of chain) path.push({ id: f.id, name: f.name })
+    setFolderPath(path)
+    setPathInitialized(true)
+  }, [allFolders, initialFolderId, pathInitialized])
+
   const folders = allFolders.filter((f: Folder) => f.parent_id === currentFolderId)
   const docs = docsData?.items ?? []
+
+  // Count docs per folder (including nested subfolders)
+  const folderDocCount = (folderId: string): number => {
+    const direct = (allDocsData?.items ?? []).filter(d => d.folder_id === folderId).length
+    const childFolders = allFolders.filter((f: Folder) => f.parent_id === folderId)
+    return direct + childFolders.reduce((sum, cf: Folder) => sum + folderDocCount(cf.id), 0)
+  }
 
   const createFolderMutation = useMutation({
     mutationFn: (name: string) => createFolder(projectId, { name, parent_id: currentFolderId }),
@@ -45,7 +77,7 @@ export default function ProjectFiles({ projectId }: { projectId: string }) {
 
   const createDocMutation = useMutation({
     mutationFn: (title: string) => createDocument({ title, project_id: projectId, folder_id: currentFolderId, status: 'draft' }),
-    onSuccess: (doc) => { qc.invalidateQueries({ queryKey: ['project-files'] }); setShowNewFile(false); setNewFileName(''); navigate(`/docs/${doc.id}`) },
+    onSuccess: (doc) => { qc.invalidateQueries({ queryKey: ['project-files'] }); setShowNewFile(false); setNewFileName(''); navigate(`/projects/${projectId}/docs/${doc.id}${currentFolderId ? `?folder=${currentFolderId}` : ''}`) },
   })
 
   const renameFolderMutation = useMutation({
@@ -60,7 +92,12 @@ export default function ProjectFiles({ projectId }: { projectId: string }) {
 
   const moveDocMutation = useMutation({
     mutationFn: ({ docId, folderId }: { docId: string; folderId: string | null }) => updateDocument(docId, { folder_id: folderId }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project-files'] }); setMovingDocId(null) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['project-files'] })
+      toast.success('文件已移动')
+      setMovingDocId(null)
+    },
+    onError: () => toast.error('移动失败'),
   })
 
   const enterFolder = (folder: Folder) => {
@@ -167,14 +204,15 @@ export default function ProjectFiles({ projectId }: { projectId: string }) {
                 <button onClick={() => enterFolder(folder)} className="flex flex-1 items-center gap-2 text-left min-w-0">
                   <FolderIcon size={18} className="shrink-0 text-yellow-500" />
                   <span className="flex-1 truncate text-sm font-medium">{folder.name}</span>
-                  <ChevronRight size={14} className="shrink-0 text-muted-foreground" />
+                  <span className="shrink-0 text-xs text-muted-foreground">{folderDocCount(folder.id)}</span>
                 </button>
-                <div className="flex shrink-0 gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex shrink-0 gap-0.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <button onClick={() => { setRenamingId(folder.id); setRenameValue(folder.name) }}
                     className="p-1 text-muted-foreground hover:text-foreground"><Pencil size={12} /></button>
                   <button onClick={() => { if (confirm(`删除文件夹「${folder.name}」及其内容？`)) deleteFolderMutation.mutate(folder.id) }}
                     className="p-1 text-muted-foreground hover:text-destructive"><Trash2 size={12} /></button>
                 </div>
+                <ChevronRight size={14} className="shrink-0 text-muted-foreground" />
               </>
             )}
           </div>
@@ -183,7 +221,7 @@ export default function ProjectFiles({ projectId }: { projectId: string }) {
         {/* Documents */}
         {docs.map((doc: Document & { project_name?: string }) => (
           <div key={doc.id} className="group flex items-center gap-2 rounded-xl border border-border bg-card p-2.5 hover:bg-accent/30 transition-colors">
-            <button onClick={() => navigate(`/docs/${doc.id}?from=project&pid=${projectId}`)}
+            <button onClick={() => navigate(`/projects/${projectId}/docs/${doc.id}${currentFolderId ? `?folder=${currentFolderId}` : ''}`)}
               className="flex flex-1 items-center gap-2 text-left min-w-0">
               <FileText size={18} className="shrink-0 text-muted-foreground" />
               <div className="flex-1 min-w-0">
@@ -195,7 +233,7 @@ export default function ProjectFiles({ projectId }: { projectId: string }) {
               </div>
             </button>
             <button onClick={() => setMovingDocId(doc.id)}
-              className="shrink-0 p-1 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+              className="shrink-0 p-1 text-muted-foreground hover:text-foreground md:opacity-0 md:group-hover:opacity-100 transition-opacity"
               title="移动到文件夹">
               <MoveRight size={14} />
             </button>

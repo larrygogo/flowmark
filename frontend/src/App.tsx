@@ -41,6 +41,7 @@ export default function App() {
           <Route path="projects/:id" element={<ProjectDetailPage />} />
           <Route path="docs" element={<DocsPage />} />
           <Route path="docs/:id" element={<DocDetailPage />} />
+          <Route path="projects/:pid/docs/:id" element={<DocDetailPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -96,24 +96,22 @@ export default function DocsPage() {
           <div className="text-xs text-muted-foreground mb-3">{total} 篇文档</div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div className="space-y-1">
           {docs.map((doc: Document & { project_name?: string; match_snippet?: string }) => (
             <button key={doc.id} onClick={() => navigate(`/docs/${doc.id}`)}
-              className="rounded-xl border border-border bg-card p-3 text-left active:bg-accent hover:bg-accent/50 transition-colors">
-              <div className="flex items-start gap-2">
-                <FileText size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{doc.title}</div>
-                  {doc.match_snippet && (
-                    <div className="mt-1 text-xs text-muted-foreground line-clamp-2"
-                      dangerouslySetInnerHTML={{ __html: doc.match_snippet.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&lt;&lt;/g, '<mark class="bg-yellow-500/30 text-foreground rounded px-0.5">').replace(/&gt;&gt;/g, '</mark>') }} />
-                  )}
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                    {doc.category && <span className="rounded-full bg-muted px-2 py-0.5">{doc.category}</span>}
-                    {doc.project_name && <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5">{doc.project_name}</span>}
-                    {parseTags(doc.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
-                    <span>{dayjs(doc.updated_at).format('YYYY-MM-DD')}</span>
-                  </div>
+              className="flex w-full items-center gap-2 rounded-xl border border-border bg-card p-2.5 text-left hover:bg-accent/30 transition-colors">
+              <FileText size={18} className="shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium truncate">{doc.title}</div>
+                {doc.match_snippet && (
+                  <div className="mt-0.5 text-xs text-muted-foreground line-clamp-1"
+                    dangerouslySetInnerHTML={{ __html: doc.match_snippet.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&lt;&lt;/g, '<mark class="bg-yellow-500/30 text-foreground rounded px-0.5">').replace(/&gt;&gt;/g, '</mark>') }} />
+                )}
+                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  {doc.category && <span className="rounded-full bg-muted px-2 py-0.5">{doc.category}</span>}
+                  {doc.project_name && <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5">{doc.project_name}</span>}
+                  {parseTags(doc.tags).map(t => <span key={t} className="rounded-full bg-accent px-2 py-0.5">{t}</span>)}
+                  <span>{dayjs(doc.updated_at).format('YYYY-MM-DD')}</span>
                 </div>
               </div>
             </button>

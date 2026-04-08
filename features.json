@@ -360,6 +360,51 @@
       "priority": "high",
       "module": "frontend",
       "tags": ["enhancement", "project", "ui", "mobile"]
+    },
+    {
+      "id": "F041",
+      "title": "文件夹列表图标与操作按钮修复",
+      "description": "文件夹向右箭头图标移到行末尾；编辑和删除图标在移动端未显示，需修复响应式样式确保移动端可见",
+      "status": "planned",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["bugfix", "ui", "mobile"]
+    },
+    {
+      "id": "F042",
+      "title": "移动文件到文件夹无效",
+      "description": "通过移动对话框将文档移动到其他文件夹后不生效，需排查 mutation 和查询刷新逻辑",
+      "status": "planned",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["bugfix", "knowledge-base"]
+    },
+    {
+      "id": "F043",
+      "title": "文件夹显示内部文件数量",
+      "description": "文件夹列表项上标注该文件夹内包含的文件数量",
+      "status": "planned",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "knowledge-base", "ui"]
+    },
+    {
+      "id": "F044",
+      "title": "知识库列表改为单行列表",
+      "description": "知识库文档列表从卡片/网格布局改为一行一个的列表形式，与项目内文件列表样式保持一致",
+      "status": "planned",
+      "priority": "medium",
+      "module": "frontend",
+      "tags": ["enhancement", "knowledge-base", "ui"]
+    },
+    {
+      "id": "F045",
+      "title": "项目文档独立 URL 与返回导航",
+      "description": "项目内文档使用 /projects/:pid/docs/:docId 独立 URL（与知识库 /docs/:id 区分）；返回按钮根据来源文件夹精准返回，文件夹内返回文件夹，根目录返回根目录",
+      "status": "planned",
+      "priority": "high",
+      "module": "frontend",
+      "tags": ["enhancement", "project", "knowledge-base", "navigation"]
     }
   ]
 }

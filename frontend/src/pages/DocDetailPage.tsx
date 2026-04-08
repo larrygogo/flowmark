@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { FileText, Download, Pencil, Check, X } from 'lucide-react'
+import { FileText, Download, Pencil, Check, X, ArrowLeft } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -11,9 +11,12 @@ import dayjs from 'dayjs'
 import 'highlight.js/styles/github-dark.min.css'
 
 export default function DocDetailPage() {
-  const { id } = useParams()
+  const { id, pid } = useParams()
+  const [searchParams] = useSearchParams()
+  const folderId = searchParams.get('folder')
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const isFromProject = !!pid
   const { data: doc, isLoading } = useQuery({ queryKey: ['document', id], queryFn: () => getDocument(id!), enabled: !!id })
 
   const [editing, setEditing] = useState(false)
@@ -55,6 +58,14 @@ export default function DocDetailPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        {isFromProject && (
+          <button
+            onClick={() => navigate(`/projects/${pid}?view=docs${folderId ? `&folder=${folderId}` : ''}`)}
+            className="shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft size={18} />
+          </button>
+        )}
         <FileText size={18} className="text-muted-foreground" />
         {editing ? (
           <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
