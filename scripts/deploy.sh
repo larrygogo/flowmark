@@ -43,10 +43,8 @@ DEPLOY_DIR="${HOME}/flowmark"
 
 echo "=== 开始部署 FlowMark ==="
 
-echo ">>> 拉取代码..."
+# 代码已由 workflow 提前拉取
 cd "$REPO_DIR"
-git fetch origin main
-git reset --hard origin/main
 
 echo ">>> 构建后端..."
 cd "$REPO_DIR/backend"
