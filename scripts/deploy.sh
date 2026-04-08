@@ -9,8 +9,8 @@ echo "=== 开始部署 FlowMark ==="
 # 1. 拉取最新代码
 echo ">>> 拉取代码..."
 cd "$REPO_DIR"
-git fetch origin main
-git reset --hard origin/main
+git fetch origin master
+git reset --hard origin/master
 
 # 2. 构建后端
 echo ">>> 构建后端..."
