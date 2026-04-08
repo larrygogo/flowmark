@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+# Load environment for non-interactive SSH sessions
+export PATH="$HOME/.local/share/pnpm:$HOME/.nvm/versions/node/$(ls $HOME/.nvm/versions/node/ 2>/dev/null | tail -1)/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
 REPO_DIR="/home/ubuntu/repos/flowmark"
 DEPLOY_DIR="/home/ubuntu/flowmark"
 
