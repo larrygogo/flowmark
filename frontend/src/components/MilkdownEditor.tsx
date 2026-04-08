@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Crepe, CrepeFeature } from '@milkdown/crepe'
 import '@milkdown/crepe/theme/common/style.css'
-import '@milkdown/crepe/theme/frame-dark.css'
 
 interface MilkdownEditorProps {
   defaultValue: string
+  readonly?: boolean
   onChange?: (markdown: string) => void
 }
 
-export default function MilkdownEditor({ defaultValue, onChange }: MilkdownEditorProps) {
+export default function MilkdownEditor({ defaultValue, readonly = true, onChange }: MilkdownEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const crepeRef = useRef<Crepe | null>(null)
   const onChangeRef = useRef(onChange)
@@ -28,6 +28,9 @@ export default function MilkdownEditor({ defaultValue, onChange }: MilkdownEdito
         [CrepeFeature.CodeMirror]: false,
         [CrepeFeature.ImageBlock]: false,
         [CrepeFeature.Latex]: false,
+        [CrepeFeature.BlockEdit]: !readonly,
+        [CrepeFeature.Toolbar]: !readonly,
+        [CrepeFeature.Placeholder]: !readonly,
       },
     })
 
@@ -39,7 +42,10 @@ export default function MilkdownEditor({ defaultValue, onChange }: MilkdownEdito
 
     crepe.create()
       .then(() => {
-        if (!destroyed) crepeRef.current = crepe
+        if (!destroyed) {
+          crepeRef.current = crepe
+          crepe.setReadonly(readonly)
+        }
       })
       .catch((err) => {
         console.error('Milkdown init error:', err)
@@ -51,16 +57,15 @@ export default function MilkdownEditor({ defaultValue, onChange }: MilkdownEdito
       crepe.destroy().catch(() => {})
       crepeRef.current = null
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [defaultValue, readonly])
 
   if (error) {
     return (
       <div className="text-destructive text-sm p-4">
         <p>编辑器加载失败: {error}</p>
-        <p className="mt-2 text-xs text-muted-foreground">请刷新页面重试</p>
       </div>
     )
   }
 
-  return <div ref={containerRef} className="milkdown-editor" />
+  return <div ref={containerRef} className="milkdown-wrap" />
 }
