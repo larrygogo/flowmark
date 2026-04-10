@@ -53,6 +53,51 @@ export function createMcpServer(): McpServer {
     return { content: [{ type: 'text', text: JSON.stringify({ id, name, message: 'Project created' }) }] };
   });
 
+  server.tool('update_project', '更新项目信息', {
+    project_id: z.string().describe('项目 ID'),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    github_url: z.string().optional(),
+    color: z.string().optional(),
+    group_name: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    archived: z.boolean().optional().describe('是否归档'),
+  }, ({ project_id, name, description, github_url, color, group_name, tags, archived }) => {
+    const db = getDb();
+    const existing = db.prepare('SELECT * FROM projects WHERE id = ?').get(project_id) as any;
+    if (!existing) return { content: [{ type: 'text', text: 'Project not found' }], isError: true };
+    const [go, gr] = parseGithubUrl(github_url ?? existing.github_url);
+    db.prepare(
+      "UPDATE projects SET name=?, description=?, group_name=?, tags=?, github_url=?, github_owner=?, github_repo=?, color=?, archived=?, updated_at=datetime('now') WHERE id=?"
+    ).run(
+      name ?? existing.name, description ?? existing.description, group_name ?? existing.group_name,
+      tags ? JSON.stringify(tags) : existing.tags, github_url ?? existing.github_url, go, gr,
+      color ?? existing.color, archived !== undefined ? (archived ? 1 : 0) : existing.archived, project_id
+    );
+    return { content: [{ type: 'text', text: JSON.stringify({ project_id, message: 'Project updated' }) }] };
+  });
+
+  server.tool('delete_project', '删除项目（含所有看板、任务、文档关联）', {
+    project_id: z.string().describe('项目 ID'),
+  }, ({ project_id }) => {
+    const db = getDb();
+    const project = db.prepare('SELECT name FROM projects WHERE id = ?').get(project_id) as any;
+    if (!project) return { content: [{ type: 'text', text: 'Project not found' }], isError: true };
+    db.prepare('DELETE FROM projects WHERE id = ?').run(project_id);
+    return { content: [{ type: 'text', text: JSON.stringify({ project_id, name: project.name, message: 'Project deleted' }) }] };
+  });
+
+  server.tool('archive_project', '归档或取消归档项目', {
+    project_id: z.string().describe('项目 ID'),
+    archived: z.boolean().describe('true=归档, false=取消归档'),
+  }, ({ project_id, archived }) => {
+    const db = getDb();
+    const project = db.prepare('SELECT name FROM projects WHERE id = ?').get(project_id) as any;
+    if (!project) return { content: [{ type: 'text', text: 'Project not found' }], isError: true };
+    db.prepare("UPDATE projects SET archived=?, updated_at=datetime('now') WHERE id=?").run(archived ? 1 : 0, project_id);
+    return { content: [{ type: 'text', text: JSON.stringify({ project_id, name: project.name, archived, message: archived ? 'Project archived' : 'Project unarchived' }) }] };
+  });
+
   // ============ Tasks ============
 
   server.tool('create_task', '创建任务', {
@@ -108,6 +153,16 @@ export function createMcpServer(): McpServer {
         progress ?? existing.progress, labels ? JSON.stringify(labels) : existing.labels,
         due_date !== undefined ? due_date : existing.due_date, newColumnId, task_id);
     return { content: [{ type: 'text', text: JSON.stringify({ task_id, message: 'Task updated' }) }] };
+  });
+
+  server.tool('delete_task', '删除任务', {
+    task_id: z.string(),
+  }, ({ task_id }) => {
+    const db = getDb();
+    const task = db.prepare('SELECT title FROM tasks WHERE id = ?').get(task_id) as any;
+    if (!task) return { content: [{ type: 'text', text: 'Task not found' }], isError: true };
+    db.prepare('DELETE FROM tasks WHERE id = ?').run(task_id);
+    return { content: [{ type: 'text', text: JSON.stringify({ task_id, title: task.title, message: 'Task deleted' }) }] };
   });
 
   server.tool('list_tasks', '列出项目的任务', {
@@ -183,6 +238,16 @@ export function createMcpServer(): McpServer {
     db.prepare('UPDATE documents SET title=?, content=?, category_id=?, tags=?, status=?, pinned=?, updated_at=datetime(\'now\') WHERE id=?')
       .run(title ?? existing.title, content ?? existing.content, categoryId, tags ? JSON.stringify(tags) : existing.tags, status ?? existing.status, pinned !== undefined ? (pinned ? 1 : 0) : existing.pinned, doc_id);
     return { content: [{ type: 'text', text: JSON.stringify({ doc_id, message: 'Document updated' }) }] };
+  });
+
+  server.tool('delete_document', '删除文档', {
+    doc_id: z.string(),
+  }, ({ doc_id }) => {
+    const db = getDb();
+    const doc = db.prepare('SELECT title FROM documents WHERE id = ?').get(doc_id) as any;
+    if (!doc) return { content: [{ type: 'text', text: 'Document not found' }], isError: true };
+    db.prepare('DELETE FROM documents WHERE id = ?').run(doc_id);
+    return { content: [{ type: 'text', text: JSON.stringify({ doc_id, title: doc.title, message: 'Document deleted' }) }] };
   });
 
   server.tool('search_documents', '搜索文档', { query: z.string() }, ({ query }) => {
