@@ -228,7 +228,15 @@ export default function ProjectDetailPage() {
           </button>
           <div className="flex gap-2 pt-2 border-t border-border">
             <button type="button"
-              onClick={() => { updateProjectMutation.mutate({ archived: !project.archived }) }}
+              onClick={() => {
+                const willArchive = !project.archived
+                updateProject(id!, { archived: willArchive }).then(() => {
+                  qc.invalidateQueries({ queryKey: ['project', id] })
+                  qc.invalidateQueries({ queryKey: ['projects'] })
+                  setShowEditDrawer(false)
+                  if (willArchive) navigate('/projects')
+                })
+              }}
               className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <Archive size={14} /> {project.archived ? '取消归档' : '归档'}
             </button>
