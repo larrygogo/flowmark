@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Calendar, GitBranch, AlertTriangle, Search, FileText, Plus, BarChart3, CheckCircle2, Circle, Clock, Pencil } from 'lucide-react'
-import { getProject, listTasks, listDocuments, createTask, updateProject, type ProjectDetail, type BoardWithColumns } from '../api/projects.ts'
+import { Calendar, GitBranch, AlertTriangle, Search, FileText, Plus, BarChart3, CheckCircle2, Circle, Clock, Pencil, Archive, Trash2 } from 'lucide-react'
+import { getProject, listTasks, listDocuments, createTask, updateProject, deleteProject, type ProjectDetail, type BoardWithColumns } from '../api/projects.ts'
 import Drawer from '../components/Drawer.tsx'
 import TaskDetailDrawer from '../components/TaskDetailDrawer.tsx'
 import ProjectFiles from '../components/ProjectFiles.tsx'
@@ -51,7 +51,11 @@ export default function ProjectDetailPage() {
   })
   const updateProjectMutation = useMutation({
     mutationFn: (data: Parameters<typeof updateProject>[1]) => updateProject(id!, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project', id] }); setShowEditDrawer(false) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project', id] }); qc.invalidateQueries({ queryKey: ['projects'] }); setShowEditDrawer(false) },
+  })
+  const deleteProjectMutation = useMutation({
+    mutationFn: () => deleteProject(id!),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['projects'] }); navigate('/projects') },
   })
 
   if (isLoading || !project) return <div className="p-4 text-muted-foreground">加载中...</div>
@@ -222,6 +226,18 @@ export default function ProjectDetailPage() {
             className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
             {updateProjectMutation.isPending ? '...' : '保存'}
           </button>
+          <div className="flex gap-2 pt-2 border-t border-border">
+            <button type="button"
+              onClick={() => { updateProjectMutation.mutate({ archived: !project.archived }) }}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Archive size={14} /> {project.archived ? '取消归档' : '归档'}
+            </button>
+            <button type="button"
+              onClick={() => { if (confirm(`确定删除项目「${project.name}」？此操作不可恢复。`)) deleteProjectMutation.mutate() }}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive hover:bg-destructive/20 transition-colors">
+              <Trash2 size={14} /> 删除
+            </button>
+          </div>
         </form>
       </Drawer>
     </div>
