@@ -138,7 +138,7 @@ apiRouter.put('/projects/:id', (req, res) => {
   const [go, gr] = parseGithubUrl(github_url ?? existing.github_url);
   db.prepare(
     'UPDATE projects SET name=?, description=?, group_name=?, tags=?, github_url=?, github_owner=?, github_repo=?, color=?, archived=?, updated_at=datetime(\'now\') WHERE id=?'
-  ).run(name ?? existing.name, description ?? existing.description, group_name ?? existing.group_name, tags ? JSON.stringify(tags) : existing.tags, github_url ?? existing.github_url, go, gr, color ?? existing.color, archived ?? existing.archived, req.params.id);
+  ).run(name ?? existing.name, description ?? existing.description, group_name ?? existing.group_name, tags ? JSON.stringify(tags) : existing.tags, github_url ?? existing.github_url, go, gr, color ?? existing.color, archived !== undefined ? (archived ? 1 : 0) : existing.archived, req.params.id);
   res.json(db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id));
 });
 
